@@ -1,4 +1,7 @@
 # Byte-compiled / optimized / DLL files
+data
+result
+word_topic_probability
 __pycache__/
 *.py[cod]
 *$py.class
