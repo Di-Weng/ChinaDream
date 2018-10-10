@@ -34,6 +34,7 @@ def list_add(a,b):
         c.append(a[i]+b[i])
     return c
 
+@jit
 def add_data(output, input_list, keyword):
     if(keyword not in output.keys()):
         output[keyword] = input_list
@@ -57,7 +58,6 @@ def get_echartsdata(output):
         current_list = []
         index = topic.index(topic_label)
         for region in region_list:
-
             current_region_list = output[region]
             if (index <= len(current_region_list) - 1):
                 current_list.append(current_region_list[index])

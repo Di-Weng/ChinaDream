@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="6e66b184-7ad5-492e-9161-044f6274a465" name="Default Changelist" comment="" />
+    <list default="true" id="6e66b184-7ad5-492e-9161-044f6274a465" name="Default Changelist" comment="keyword_">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/topic_keyword.py" beforeDir="false" afterPath="$PROJECT_DIR$/topic_keyword.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/topic_location.py" beforeDir="false" afterPath="$PROJECT_DIR$/topic_location.py" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -9,20 +13,20 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/ChinaDream$topic_location.coverage" NAME="topic_location Coverage Results" MODIFIED="1538967148767" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/ChinaDream$topic_keyword.coverage" NAME="topic_keyword Coverage Results" MODIFIED="1538972180774" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/ChinaDream$topic_location.coverage" NAME="topic_location Coverage Results" MODIFIED="1539139741524" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/ChinaDream$topic_keyword.coverage" NAME="topic_keyword Coverage Results" MODIFIED="1539155179214" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/ChinaDream$topic_follower.coverage" NAME="topic_follower Coverage Results" MODIFIED="1539066055050" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="FUSProjectUsageTrigger">
     <session id="206793164">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="7" />
+          <entry key="project.closed" value="8" />
           <entry key="project.open.time.0" value="2" />
           <entry key="project.open.time.17" value="1" />
           <entry key="project.open.time.6" value="3" />
-          <entry key="project.open.time.8" value="1" />
-          <entry key="project.opened" value="7" />
+          <entry key="project.open.time.8" value="3" />
+          <entry key="project.opened" value="9" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.vcs.git.usages">
@@ -35,7 +39,7 @@
           <entry key="gitignore" value="2" />
           <entry key="ipynb" value="1" />
           <entry key="md" value="2" />
-          <entry key="py" value="17" />
+          <entry key="py" value="19" />
           <entry key="txt" value="4" />
           <entry key="word_topic_probability" value="1" />
         </counts>
@@ -46,21 +50,21 @@
           <entry key="IPNB" value="1" />
           <entry key="Markdown" value="2" />
           <entry key="PLAIN_TEXT" value="5" />
-          <entry key="Python" value="17" />
+          <entry key="Python" value="19" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="gitignore" value="50" />
-          <entry key="py" value="1776" />
-          <entry key="txt" value="69" />
+          <entry key="py" value="2369" />
+          <entry key="txt" value="119" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="Git file" value="50" />
-          <entry key="PLAIN_TEXT" value="69" />
-          <entry key="Python" value="1776" />
+          <entry key="PLAIN_TEXT" value="119" />
+          <entry key="Python" value="2369" />
         </counts>
       </usages-collector>
     </session>
@@ -70,29 +74,11 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/topic_follower.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1207">
-              <caret line="71" column="17" lean-forward="true" selection-start-line="71" selection-start-column="17" selection-end-line="71" selection-end-column="17" />
+            <state relative-caret-position="1156">
+              <caret line="71" column="17" selection-start-line="71" selection-start-column="17" selection-end-line="71" selection-end-column="17" />
               <folding>
                 <element signature="e#153#170#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/result/follower_echarts_multilines.txt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="238">
-              <caret line="14" lean-forward="true" selection-start-line="14" selection-end-line="14" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/result/follower_echarts_xAxis.txt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <caret column="17787" lean-forward="true" selection-end-column="17787" />
             </state>
           </provider>
         </entry>
@@ -109,8 +95,20 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/topic_sta1.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="284">
-              <caret line="84" column="50" lean-forward="true" selection-start-line="84" selection-start-column="8" selection-end-line="84" selection-end-column="50" />
+            <state relative-caret-position="146">
+              <caret line="324" selection-start-line="324" selection-end-line="324" selection-end-column="13" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/topic_location.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="321">
+              <caret line="126" lean-forward="true" selection-start-line="126" selection-end-line="126" />
+              <folding>
+                <marker date="1539155930230" expanded="true" signature="2272:3209" ph="..." />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -118,10 +116,11 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/topic_keyword.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="578">
-              <caret line="34" column="11" selection-start-line="34" selection-start-column="11" selection-end-line="34" selection-end-column="11" />
+            <state relative-caret-position="223">
+              <caret line="28" column="17" lean-forward="true" selection-start-line="28" selection-start-column="17" selection-end-line="28" selection-end-column="17" />
               <folding>
-                <marker date="1538972180765" expanded="true" signature="1277:1278" ph="..." />
+                <element signature="e#212#240#0" expanded="true" />
+                <marker date="1539140461950" expanded="true" signature="297:298" ph="..." />
               </folding>
             </state>
           </provider>
@@ -131,7 +130,7 @@
         <entry file="file://$PROJECT_DIR$/keyword_percent.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="289">
-              <caret line="17" lean-forward="true" selection-start-line="17" selection-end-line="17" />
+              <caret line="17" selection-start-line="17" selection-end-line="17" />
             </state>
           </provider>
         </entry>
@@ -153,8 +152,11 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/keyword_location.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="289">
-              <caret line="17" selection-start-line="17" selection-end-line="17" />
+            <state relative-caret-position="369">
+              <caret line="119" selection-start-line="119" selection-end-line="119" />
+              <folding>
+                <element signature="e#153#170#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -175,6 +177,10 @@
       <find>output</find>
       <find>new_output_dic_per</find>
       <find>topic_keyword</find>
+      <find>0.2527620918242082</find>
+      <find>keyword_location</find>
+      <find>keyword_li</find>
+      <find>keywords_list</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -189,11 +195,12 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/topic_follower.py" />
-        <option value="$PROJECT_DIR$/topic_location.py" />
-        <option value="$PROJECT_DIR$/topic_keyword.py" />
         <option value="$PROJECT_DIR$/topic_sta1.py" />
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/result/follower_echarts_multilines.txt" />
+        <option value="$PROJECT_DIR$/topic_keyword.py" />
+        <option value="$PROJECT_DIR$/topic_location.py" />
+        <option value="$PROJECT_DIR$/keyword_location.py" />
       </list>
     </option>
   </component>
@@ -216,6 +223,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -232,7 +240,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -259,7 +266,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.topic_follower">
+  <component name="RunManager" selected="Python.topic_keyword">
     <configuration name="topic_follower" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="ChinaDream" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -333,9 +340,9 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.topic_follower" />
         <item itemvalue="Python.topic_keyword" />
         <item itemvalue="Python.topic_location" />
+        <item itemvalue="Python.topic_follower" />
       </list>
     </recent_temporary>
   </component>
@@ -392,18 +399,26 @@
       <option name="project" value="LOCAL" />
       <updated>1539065886061</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="add keyword_location">
+      <created>1539156288952</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1539156288952</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1440" height="802" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.24964234" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32891566" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.32816902" />
+      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.26619717" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -443,7 +458,8 @@
     <MESSAGE value="follower location test" />
     <MESSAGE value="add topic_keyword" />
     <MESSAGE value="ignore .xml" />
-    <option name="LAST_COMMIT_MESSAGE" value="ignore .xml" />
+    <MESSAGE value="add keyword_location" />
+    <option name="LAST_COMMIT_MESSAGE" value="add keyword_location" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/result/follower_echarts.txt">
@@ -481,43 +497,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/topic_location.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1207">
-          <caret line="73" column="17" selection-start-line="51" selection-start-column="4" selection-end-line="73" selection-end-column="17" />
-          <folding>
-            <marker date="1538967148759" expanded="true" signature="2268:3205" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/topic_keyword.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="578">
-          <caret line="34" column="11" selection-start-line="34" selection-start-column="11" selection-end-line="34" selection-end-column="11" />
-          <folding>
-            <marker date="1538972180765" expanded="true" signature="1277:1278" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="7" selection-start-line="7" selection-end-line="7" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/topic_cla.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/keyword_location.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="289">
-          <caret line="17" selection-start-line="17" selection-end-line="17" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/.gitignore">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="136">
@@ -525,17 +504,24 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/keyword_percent.py">
+    <entry file="file://$PROJECT_DIR$/result/follower_echarts_multilines.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="289">
-          <caret line="17" lean-forward="true" selection-start-line="17" selection-end-line="17" />
+        <state relative-caret-position="238">
+          <caret line="14" lean-forward="true" selection-start-line="14" selection-end-line="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/result/follower_echarts_xAxis.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="17787" selection-end-column="17787" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/topic_follower.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1207">
-          <caret line="71" column="17" lean-forward="true" selection-start-line="71" selection-start-column="17" selection-end-line="71" selection-end-column="17" />
+        <state relative-caret-position="1156">
+          <caret line="71" column="17" selection-start-line="71" selection-start-column="17" selection-end-line="71" selection-end-column="17" />
           <folding>
             <element signature="e#153#170#0" expanded="true" />
           </folding>
@@ -549,24 +535,58 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/keyword_percent.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="289">
+          <caret line="17" selection-start-line="17" selection-end-line="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="102">
+          <caret line="7" selection-start-line="7" selection-end-line="7" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/topic_sta1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="284">
-          <caret line="84" column="50" lean-forward="true" selection-start-line="84" selection-start-column="8" selection-end-line="84" selection-end-column="50" />
+        <state relative-caret-position="146">
+          <caret line="324" selection-start-line="324" selection-end-line="324" selection-end-column="13" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/result/follower_echarts_xAxis.txt">
+    <entry file="file://$PROJECT_DIR$/topic_cla.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/keyword_location.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret column="17787" lean-forward="true" selection-end-column="17787" />
+        <state relative-caret-position="369">
+          <caret line="119" selection-start-line="119" selection-end-line="119" />
+          <folding>
+            <element signature="e#153#170#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/result/follower_echarts_multilines.txt">
+    <entry file="file://$PROJECT_DIR$/topic_keyword.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" lean-forward="true" selection-start-line="14" selection-end-line="14" />
+        <state relative-caret-position="223">
+          <caret line="28" column="17" lean-forward="true" selection-start-line="28" selection-start-column="17" selection-end-line="28" selection-end-column="17" />
+          <folding>
+            <element signature="e#212#240#0" expanded="true" />
+            <marker date="1539140461950" expanded="true" signature="297:298" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/topic_location.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="321">
+          <caret line="126" lean-forward="true" selection-start-line="126" selection-end-line="126" />
+          <folding>
+            <marker date="1539155930230" expanded="true" signature="2272:3209" ph="..." />
+          </folding>
         </state>
       </provider>
     </entry>
