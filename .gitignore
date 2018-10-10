@@ -3,6 +3,7 @@ data
 result
 word_topic_probability
 .xml
+.iml
 __pycache__/
 *.py[cod]
 *$py.class
