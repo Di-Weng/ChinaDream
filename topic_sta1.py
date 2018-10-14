@@ -6,6 +6,7 @@
 # @Description:  */
 
 debug = 0
+from numba import jit
 from time import time
 import jieba
 import os
@@ -352,6 +353,34 @@ def keyword_location(file_paht_list):
         print(output_dic)
         print('dismiss count: ' + str(dismiss_count))
         print('current collection process time: ' + str(e_t - s_t))
+
+@jit
+def keyword_coOccurrence(file_path_list):
+    dismiss_count = 0
+
+    output_dic = {}
+    for keyword in keywords_list:
+        output_dic[keyword] = [0 for i in range(len(keywords_list))]
+
+    for current_file in file_path_list:
+        with open(current_file, 'r', encoding='utf-8') as f:
+            s_t = time()
+            for line in f:
+                line_section = line.split('\t')
+                current_keyword_list = getKeywordList(line_section)
+
+                if(len(current_keyword_list) <= 1):
+                    continue
+                for keyword1 in current_keyword_list:
+                    for keyword2 in current_keyword_list:
+                        if(keyword1 == keyword2):
+                            continue
+                        output_dic[keyword1][keywords_list.index(keyword2)] += 1
+            e_t = time()
+        print(output_dic)
+        print('dismiss count: ' + str(dismiss_count))
+        print('current collection' + str(current_file) + 'process time: ' + str(e_t - s_t))
+
 
 if __name__ == '__main__':
     # topic_keyword
