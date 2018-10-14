@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="6e66b184-7ad5-492e-9161-044f6274a465" name="Default Changelist" comment="update ignore">
+    <list default="true" id="6e66b184-7ad5-492e-9161-044f6274a465" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/topic_sta1.py" beforeDir="false" afterPath="$PROJECT_DIR$/topic_sta1.py" afterDir="false" />
     </list>
@@ -59,15 +59,15 @@
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="gitignore" value="55" />
-          <entry key="py" value="3130" />
-          <entry key="txt" value="259" />
+          <entry key="py" value="3166" />
+          <entry key="txt" value="330" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="Git file" value="54" />
-          <entry key="PLAIN_TEXT" value="260" />
-          <entry key="Python" value="3130" />
+          <entry key="PLAIN_TEXT" value="331" />
+          <entry key="Python" value="3166" />
         </counts>
       </usages-collector>
     </session>
@@ -77,12 +77,12 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/topic_sta1.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="370">
-              <caret line="390" column="41" lean-forward="true" selection-start-line="390" selection-start-column="41" selection-end-line="390" selection-end-column="41" />
+            <state relative-caret-position="181">
+              <caret line="113" column="30" lean-forward="true" selection-start-line="113" selection-start-column="30" selection-end-line="113" selection-end-column="30" />
               <folding>
                 <element signature="e#171#192#0" expanded="true" />
-                <marker date="1539520551531" expanded="true" signature="3107:3328" ph="..." />
-                <marker date="1539520551531" expanded="true" signature="13083:13861" ph="..." />
+                <marker date="1539521897796" expanded="true" signature="3107:3422" ph="..." />
+                <marker date="1539521897796" expanded="true" signature="13177:13956" ph="..." />
               </folding>
             </state>
           </provider>
@@ -180,8 +180,8 @@
       <find>keywords_list</find>
       <find>0.21126933464276945</find>
       <find>for</find>
-      <find>keyword</find>
       <find>output_dic</find>
+      <find>keyword</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -491,7 +491,21 @@
       <option name="project" value="LOCAL" />
       <updated>1539520119449</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="fix word_coOcurrence">
+      <created>1539520591305</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1539520591305</updated>
+    </task>
+    <task id="LOCAL-00014" summary="modify getKeywordlist">
+      <created>1539521761459</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1539521761459</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -549,7 +563,9 @@
     <MESSAGE value="update ignore" />
     <MESSAGE value="fulfill keyword_location" />
     <MESSAGE value="add keyword_co-ocurrence" />
-    <option name="LAST_COMMIT_MESSAGE" value="add keyword_co-ocurrence" />
+    <MESSAGE value="fix word_coOcurrence" />
+    <MESSAGE value="modify getKeywordlist" />
+    <option name="LAST_COMMIT_MESSAGE" value="modify getKeywordlist" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/result/follower_echarts.txt">
@@ -685,12 +701,12 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/topic_sta1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="370">
-          <caret line="390" column="41" lean-forward="true" selection-start-line="390" selection-start-column="41" selection-end-line="390" selection-end-column="41" />
+        <state relative-caret-position="181">
+          <caret line="113" column="30" lean-forward="true" selection-start-line="113" selection-start-column="30" selection-end-line="113" selection-end-column="30" />
           <folding>
             <element signature="e#171#192#0" expanded="true" />
-            <marker date="1539520551531" expanded="true" signature="3107:3328" ph="..." />
-            <marker date="1539520551531" expanded="true" signature="13083:13861" ph="..." />
+            <marker date="1539521897796" expanded="true" signature="3107:3422" ph="..." />
+            <marker date="1539521897796" expanded="true" signature="13177:13956" ph="..." />
           </folding>
         </state>
       </provider>

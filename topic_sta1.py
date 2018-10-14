@@ -38,7 +38,6 @@ def getFileTime(filepath):
 # input line.split('\t')
 # 存在 ,
 def getKeywordList(line_section):
-    line_section = line_section.replace(',', '')
     return line_section[:-1]
 
 
@@ -113,7 +112,9 @@ def conntoMongoWeiboNSeg():
 @jit
 def word_coOcurrence(input_dic, word_list):
     for keyword1 in word_list:
+        keyword1 = keyword1.replace(',', '')
         for keyword2 in word_list:
+            keyword2 = keyword2.replace(',', '')
             if (keyword1 == keyword2):
                 continue
             input_dic[keyword1][keywords_list.index(keyword2)] += 1
