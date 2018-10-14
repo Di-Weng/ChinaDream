@@ -109,6 +109,15 @@ def conntoMongoWeiboNSeg():
     db = conn.weiboDBNSeg
     return db
 
+@jit
+def word_coOcurrence(input_dic, word_list):
+    for keyword1 in word_list:
+        for keyword2 in word_list:
+            if (keyword1 == keyword2):
+                continue
+            input_dic[keyword1][keywords_list.index(keyword2)] += 1
+    return input_dic
+
 # return dic[keyword] = (topic_count)['社会', '国际', '体育', '科技', '娱乐', '财经', '军事']
 def topic_keyword(file_paht_list):
     dismiss_count = 0
@@ -354,7 +363,6 @@ def keyword_location(file_paht_list):
         print('dismiss count: ' + str(dismiss_count))
         print('current collection process time: ' + str(e_t - s_t))
 
-@jit
 def keyword_coOccurrence(file_path_list):
     dismiss_count = 0
 
@@ -371,11 +379,7 @@ def keyword_coOccurrence(file_path_list):
 
                 if(len(current_keyword_list) <= 1):
                     continue
-                for keyword1 in current_keyword_list:
-                    for keyword2 in current_keyword_list:
-                        if(keyword1 == keyword2):
-                            continue
-                        output_dic[keyword1][keywords_list.index(keyword2)] += 1
+                output_dic = word_coOcurrence(output_dic, current_keyword_list)
             e_t = time()
         print(output_dic)
         print('dismiss count: ' + str(dismiss_count))
