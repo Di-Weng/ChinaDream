@@ -4,8 +4,7 @@ result
 word_topic_probability
 .xml
 .iml
-.idea
-.DS_Store
+.idea/
 __pycache__/
 *.py[cod]
 *$py.class
