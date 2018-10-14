@@ -38,6 +38,7 @@ def getFileTime(filepath):
 # input line.split('\t')
 # 存在 ,
 def getKeywordList(line_section):
+    line_section = line_section.replace(',', '')
     return line_section[:-1]
 
 
@@ -376,6 +377,7 @@ def keyword_coOccurrence(file_path_list):
             for line in f:
                 line_section = line.split('\t')
                 current_keyword_list = getKeywordList(line_section)
+
 
                 if(len(current_keyword_list) <= 1):
                     continue
