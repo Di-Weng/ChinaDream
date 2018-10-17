@@ -389,7 +389,7 @@ def keyword_coOccurrence(file_path_list):
         print('current collection' + str(current_file) + 'process time: ' + str(e_t - s_t))
 
 def classify_Province(file_path_list):
-    weiboprovincefilefolder = 'D:/chinadream/province'
+    weiboprovincefilefolder = 'D:/chinadream/province/'
     dismiss = 0
     existing_province = set()
     for current_file in file_path_list:
@@ -402,8 +402,17 @@ def classify_Province(file_path_list):
                 if(len(location) == 0):
                     dismiss += 1
                     continue
-                current_province = location.split()
+                current_province = location.split()[0]
+                write_file_path = weiboprovincefilefolder + current_province + '.txt'
+                write_file = open(write_file_path,'a+', encoding = 'utf-8')
+                write_file.write(line)
+                write_file.write('\n')
                 print(current_province)
+        e_t = time()
+        print(existing_province)
+        print('dismiss count: ' + str(dismiss))
+        print('current collection' + str(current_file) + 'process time: ' + str(e_t - s_t))
+
 
 
 
