@@ -390,7 +390,8 @@ def keyword_coOccurrence(file_path_list):
 
 def classify_Province(file_path_list):
     weiboprovincefilefolder = 'D:/chinadream/province'
-
+    dismiss = 0
+    existing_province = set()
     for current_file in file_path_list:
         with open(current_file, 'r', encoding='utf-8') as f:
             s_t = time()
@@ -398,8 +399,11 @@ def classify_Province(file_path_list):
                 line_section = line.split('\t')
 
                 location = getLocation(line_section)
-                print(location)
-
+                if(len(location) == 0):
+                    dismiss += 1
+                    continue
+                current_province = location.split()
+                print(current_province)
 
 
 
