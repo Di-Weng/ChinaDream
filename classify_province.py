@@ -11,5 +11,7 @@
 
 import topic_sta1
 weibofilefolder = 'D:/chinadream/data'
-file_path_list = topic_sta1.getAllFile(weibofilefolder)
-topic_sta1.classify_Province(file_path_list)
+
+if __name__ == '__main__':
+    file_path_list = topic_sta1.getAllFile(weibofilefolder)
+    topic_sta1.classify_Province(file_path_list)
