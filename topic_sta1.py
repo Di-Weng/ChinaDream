@@ -388,6 +388,21 @@ def keyword_coOccurrence(file_path_list):
         print('dismiss count: ' + str(dismiss_count))
         print('current collection' + str(current_file) + 'process time: ' + str(e_t - s_t))
 
+def classify_Province(file_path_list):
+    weiboprovincefilefolder = 'D:/chinadream/province'
+
+    for current_file in file_path_list:
+        with open(current_file, 'r', encoding='utf-8') as f:
+            s_t = time()
+            for line in f:
+                line_section = line.split('\t')
+
+                location = getLocation(line_section)
+                print(location)
+
+
+
+
 
 if __name__ == '__main__':
     # topic_keyword
