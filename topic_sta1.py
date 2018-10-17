@@ -407,7 +407,7 @@ def classify_Province(file_path_list):
                 write_file = open(write_file_path,'a+', encoding = 'utf-8')
                 write_file.write(line)
                 write_file.write('\n')
-                print(current_province)
+                # print(current_province)
         e_t = time()
         print(existing_province)
         print('dismiss count: ' + str(dismiss))
