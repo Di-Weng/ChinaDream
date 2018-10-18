@@ -109,6 +109,16 @@ def conntoMongoWeiboNSeg():
     db = conn.weiboDBNSeg
     return db
 
+#按省份划分collection
+def conntoMongoWeiboProvince():
+    conn = pymongo.MongoClient('127.0.0.1',
+                   27017,
+                   username='wd',
+                   password='wd123456',
+                  )
+    db = conn.weiboProvince
+    return db
+
 @jit
 def word_coOcurrence(input_dic, word_list):
     for keyword1 in word_list:
@@ -388,30 +398,55 @@ def keyword_coOccurrence(file_path_list):
         print('dismiss count: ' + str(dismiss_count))
         print('current collection' + str(current_file) + 'process time: ' + str(e_t - s_t))
 
-def classify_Province(file_path_list):
-    weiboprovincefilefolder = 'D:/chinadream/province/'
+def classify_Province(file_path_list, usingMongo = 1):
+    # usingMongo 0 代表使用文件存储；1代表使用MongoDB存储
     dismiss = 0
     existing_province = set()
-    for current_file in file_path_list:
-        with open(current_file, 'r', encoding='utf-8') as f:
-            s_t = time()
-            for line in f:
-                line_section = line.split('\t')
+    if (not usingMongo):
+        weiboprovincefilefolder = 'D:/chinadream/province/'
+        for current_file in file_path_list:
+            with open(current_file, 'r', encoding='utf-8') as f:
+                s_t = time()
+                for line in f:
+                    line_section = line.split('\t')
 
-                location = getLocation(line_section)
-                if(len(location) == 0):
-                    dismiss += 1
-                    continue
-                current_province = location.split()[0]
-                write_file_path = weiboprovincefilefolder + current_province + '.txt'
-                write_file = open(write_file_path,'a+', encoding = 'utf-8')
-                write_file.write(line)
-                write_file.write('\n')
-                # print(current_province)
-        e_t = time()
-        print(existing_province)
-        print('dismiss count: ' + str(dismiss))
-        print('current collection' + str(current_file) + 'process time: ' + str(e_t - s_t))
+                    location = getLocation(line_section)
+                    if(len(location) == 0):
+                        dismiss += 1
+                        continue
+                    current_province = location.split()[0]
+                    write_file_path = weiboprovincefilefolder + current_province + '.txt'
+                    write_file = open(write_file_path,'a+', encoding = 'utf-8')
+                    write_file.write(line)
+                    write_file.write('\n')
+                    # print(current_province)
+            e_t = time()
+            print(existing_province)
+            print('dismiss count: ' + str(dismiss))
+            print('current collection' + str(current_file) + 'process time: ' + str(e_t - s_t))
+    else:
+        db = conntoMongoWeiboProvince()
+        for current_file in file_path_list:
+            with open(current_file, 'r', encoding='utf-8') as f:
+                s_t = time()
+                for line in f:
+                    line_section = line.split('\t')
+                    json_data = line_section[-1].strip()
+                    location = getLocation(line_section)
+                    if (len(location) == 0):
+                        dismiss += 1
+                        continue
+                    current_province = location.split()[0]
+                    data_toinsert ={
+                        'location':location,
+                        'line': json_data
+                    }
+                    current_collection = db[current_province]
+                    result = current_collection.insert_one(data_toinsert)
+            e_t = time()
+            print(existing_province)
+            print('dismiss count: ' + str(dismiss))
+            print('current file:\t' + str(current_file) + '\tprocess time:\t' + str(e_t - s_t))
 
 
 
