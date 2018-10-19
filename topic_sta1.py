@@ -90,8 +90,8 @@ def getTopic(weibo):
     return topic_cla.predict(weibo)
 
 #keyword切分
-def conntoMongoWeibo():
-    conn = pymongo.MongoClient('127.0.0.1',
+def conntoMongoWeibo(ServerURL = '127.0.0.1'):
+    conn = pymongo.MongoClient(ServerURL,
                    27017,
                    username='wd',
                    password='wd123456',
@@ -100,8 +100,8 @@ def conntoMongoWeibo():
     return db
 
 #keyword不切分
-def conntoMongoWeiboNSeg():
-    conn = pymongo.MongoClient('127.0.0.1',
+def conntoMongoWeiboNSeg(ServerURL = '127.0.0.1'):
+    conn = pymongo.MongoClient(ServerURL,
                    27017,
                    username='wd',
                    password='wd123456',
@@ -110,8 +110,8 @@ def conntoMongoWeiboNSeg():
     return db
 
 #按省份划分collection
-def conntoMongoWeiboProvince():
-    conn = pymongo.MongoClient('127.0.0.1',
+def conntoMongoWeiboProvince(ServerURL = '127.0.0.1'):
+    conn = pymongo.MongoClient(ServerURL,
                    27017,
                    username='wd',
                    password='wd123456',
