@@ -15,7 +15,8 @@ import topic_cla
 import filer
 import pymongo
 import pickle
-
+import jieba
+import ast
 # the uppest path of weibo data document
 weibofilefolder = 'D:/chinadream/data'
 north_city = ['北京','天津','内蒙古','新疆','河北','甘肃','宁夏','山西','陕西','青海','山东','河南','安徽','辽宁','吉林','黑龙江']
@@ -449,13 +450,28 @@ def classify_Province(file_path_list, usingMongo = 1):
             print('current file:\t' + str(current_file) + '\tprocess time:\t' + str(e_t - s_t))
 
 def getProvince_corpus(usingMongo = 1):
+    jieba.load_userdict("data/user_dict.txt")
+    stop_word = []
+
+    with open('data/stop_word.txt', 'r', encoding='utf-8') as sw_f:
+        for item in sw_f:
+            stop_word.append(item.strip())
+
     if(not usingMongo):
         print('Method not available!')
         return
     else:
         db = conntoMongoWeiboProvince()
-        for current_connection in db.collection_names():
-            print(current_connection)
+        for current_connection_name in db.collection_names():
+            current_connection = db[current_connection_name]
+            query_cursor = current_connection.find()
+            for mongo_doc in query_cursor:
+                json_file = mongo_doc['line']
+                dic_file = ast.literal_eval(json_file)
+                weibo_origin = dic_file['text']
+                print(weibo_origin)
+
+
 
 
 
