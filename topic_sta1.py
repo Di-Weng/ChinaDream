@@ -18,6 +18,7 @@ import pickle
 import jieba
 from gensim import corpora
 from gensim.models import LdaModel
+from gensim.models import LdaMulticore
 import codecs
 
 # the uppest path of weibo data document
@@ -121,7 +122,7 @@ def conntoMongoWeiboProvince(ServerURL = '127.0.0.1'):
                    password='wd123456',
                   )
     # db = conn.weiboProvince
-    db = conn.weiboProvince_text
+    db = conn.weiboProvince
     return db
 
 @jit
@@ -483,22 +484,21 @@ def getProvince_text(mongo_server = '127.0.0.1',usingMongo = 1):
                 for items in weibo_cut:
                     if (items not in stop_word and len(items.strip()) > 0):
                         weibo_cut_list.append(items)
-                if(len(weibo_cut_list) == 0):
+                if(len(weibo_cut_list) < 5):
                     continue
                 origin_text.append(weibo_cut_list)
-            dictionary = corpora.dictionary(origin_text)
-            corpus = [dictionary.doc2bow(text) for text in dictionary]
-            lda = LdaModel(corpus=corpus, id2word=dictionary, num_topics=50, passes=2000)
-            doc_topic = [a for a in lda[corpus]]
-            doc_name = codecs.open('result/' + current_connection_name + '_docTopic_result.txt', 'w')
-            for dt in doc_topic:
-                doc_name.write(str(dt) + '\n')
-            lda.print_topics(20)
+
+            dictionary = corpora.Dictionary(origin_text)
+            corpus = [dictionary.doc2bow(text) for text in origin_text]
+            lda = LdaMulticore(corpus=corpus, id2word=dictionary, num_topics=100, passes=2, chunksize=10000, workers=7)
+            topics_r = lda.print_topics(20)
+            print(lda.top_topics(20))
+            # print(topics_r)
             print('____________')
-            topics_r = lda.print_topics(num_topics=50, num_words=10)
-            topic_name = codecs.open('result/' + current_connection_name +'_topics_result.txt', 'w')
+            topic_name = codecs.open('result/topic/' + current_connection_name +'_topics_result.txt', 'w',encoding='utf-8')
             for v in topics_r:
                 topic_name.write(str(v) + '\n')
+            topic_name.close()
 
 
 
