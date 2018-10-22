@@ -448,6 +448,15 @@ def classify_Province(file_path_list, usingMongo = 1):
             print('dismiss count: ' + str(dismiss))
             print('current file:\t' + str(current_file) + '\tprocess time:\t' + str(e_t - s_t))
 
+def getProvince_corpus(usingMongo = 1):
+    if(not usingMongo):
+        print('Method not available!')
+        return
+    else:
+        db = conntoMongoWeiboProvince()
+        for current_connection in db.collection_names():
+            print(current_connection)
+
 
 
 
