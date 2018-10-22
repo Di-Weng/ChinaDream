@@ -16,7 +16,10 @@ import filer
 import pymongo
 import pickle
 import jieba
-import ast
+from gensim import corpora
+from gensim.models import LdaModel
+import codecs
+
 # the uppest path of weibo data document
 weibofilefolder = 'D:/chinadream/data'
 north_city = ['北京','天津','内蒙古','新疆','河北','甘肃','宁夏','山西','陕西','青海','山东','河南','安徽','辽宁','吉林','黑龙江']
@@ -450,7 +453,7 @@ def classify_Province(file_path_list, usingMongo = 1):
             print('dismiss count: ' + str(dismiss))
             print('current file:\t' + str(current_file) + '\tprocess time:\t' + str(e_t - s_t))
 
-def getProvince_corpus(usingMongo = 1):
+def getProvince_text(mongo_server = '127.0.0.1',usingMongo = 1):
     jieba.load_userdict("data/user_dict.txt")
     stop_word = []
 
@@ -462,15 +465,42 @@ def getProvince_corpus(usingMongo = 1):
         print('Method not available!')
         return
     else:
-        db = conntoMongoWeiboProvince()
+        db = conntoMongoWeiboProvince(mongo_server)
         for current_connection_name in db.collection_names():
+            origin_text = []
+            print(current_connection_name)
             current_connection = db[current_connection_name]
             query_cursor = current_connection.find()
             for mongo_doc in query_cursor:
                 json_file = mongo_doc['line']
-                dic_file = ast.literal_eval(json_file)
+                dic_file = json.loads(json_file)
                 weibo_origin = dic_file['text']
-                print(weibo_origin)
+                weibo_origin = filer.filer(weibo_origin).replace('/','')
+                if (len(weibo_origin) == 0):
+                    continue
+                weibo_cut = list(jieba.cut(weibo_origin))
+                weibo_cut_list = []
+                for items in weibo_cut:
+                    if (items not in stop_word and len(items.strip()) > 0):
+                        weibo_cut_list.append(items)
+                if(len(weibo_cut_list) == 0):
+                    continue
+                origin_text.append(weibo_cut_list)
+            dictionary = corpora.dictionary(origin_text)
+            corpus = [dictionary.doc2bow(text) for text in dictionary]
+            lda = LdaModel(corpus=corpus, id2word=dictionary, num_topics=50, passes=2000)
+            doc_topic = [a for a in lda[corpus]]
+            doc_name = codecs.open('result/' + current_connection_name + '_docTopic_result.txt', 'w')
+            for dt in doc_topic:
+                doc_name.write(str(dt) + '\n')
+            lda.print_topics(20)
+            print('____________')
+            topics_r = lda.print_topics(num_topics=50, num_words=10)
+            topic_name = codecs.open('result/' + current_connection_name +'_topics_result.txt', 'w')
+            for v in topics_r:
+                topic_name.write(str(v) + '\n')
+
+
 
 
 

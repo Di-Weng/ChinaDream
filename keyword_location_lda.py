@@ -10,5 +10,9 @@
 """
 import topic_sta1
 
+from gensim import models
+from gensim.corpora import Dictionary
+import codecs
+
 if __name__=='__main__':
-    topic_sta1.getProvince_corpus()
+    topic_sta1.getProvince_text()
