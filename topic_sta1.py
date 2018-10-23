@@ -496,12 +496,15 @@ def getProvince_text(mongo_server = '127.0.0.1',usingMongo = 1):
                     frequency[token] += 1
             texts = [[token for token in text if frequency[token] > 1]
                      for text in origin_text]
+            print(texts)
 
-            word_count_dict = corpora.Dictionary(origin_text)
-            corpus = [word_count_dict.doc2bow(text) for text in origin_text]
-            lda = LdaModel(corpus=corpus, id2word=word_count_dict, num_topics=50)
+            word_count_dict = corpora.Dictionary(texts)
+            corpus = [word_count_dict.doc2bow(text) for text in texts]
+            print(corpus)
+            corpora.MmCorpus.serialize('data/topic/' + current_connection_name+ '_mmcorpus.mm', corpus)  # store to disk, for later use
+            lda = LdaMulticore(corpus=corpus, id2word=word_count_dict, num_topics=50,workers=7)
             topics_r = lda.print_topics(20)
-            print(lda.top_topics(20))
+            print(topics_r)
             # print(topics_r)
             print('____________')
             topic_name = codecs.open('result/topic/' + current_connection_name +'_topics_result.txt', 'w',encoding='utf-8')
