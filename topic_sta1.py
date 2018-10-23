@@ -122,8 +122,8 @@ def conntoMongoWeiboProvince(ServerURL = '127.0.0.1'):
                    username='wd',
                    password='wd123456',
                   )
-    db = conn.weiboProvince_text
-    # db = conn.weiboProvince
+    # db = conn.weiboProvince_text
+    db = conn.weiboProvince
     return db
 
 @jit
