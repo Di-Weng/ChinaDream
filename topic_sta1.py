@@ -513,7 +513,7 @@ def getProvince_text(mongo_server = '127.0.0.1',usingMongo = 1):
             topic_name.close()
 
 # weibofilefolder = 'D:/chinadream/data'
-def get_city_list(file_path_list):
+def collect_city_file(file_path_list):
     ignore_region = ['其他','海外']
     output_file = 'D:/chinadream/city/'
     for current_file in file_path_list:
@@ -533,7 +533,7 @@ def get_city_list(file_path_list):
                     if(len(current_location_list) < 2):
                         continue
                     city = current_location_list[1]
-                city_file = codecs.open(output_file+city+'.txt','w+',encoding='utf-8')
+                city_file = codecs.open(output_file+city+'.txt','a+',encoding='utf-8')
                 city_file.write(current_text)
                 city_file.write('\n')
                 city_file.close()
