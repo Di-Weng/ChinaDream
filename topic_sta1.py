@@ -20,6 +20,7 @@ from gensim import corpora
 from gensim.models import LdaModel
 from gensim.models import LdaMulticore
 import codecs
+from collections import defaultdict
 
 # the uppest path of weibo data document
 weibofilefolder = 'D:/chinadream/data'
@@ -121,8 +122,8 @@ def conntoMongoWeiboProvince(ServerURL = '127.0.0.1'):
                    username='wd',
                    password='wd123456',
                   )
+    db = conn.weiboProvince_text
     # db = conn.weiboProvince
-    db = conn.weiboProvince
     return db
 
 @jit
@@ -469,6 +470,7 @@ def getProvince_text(mongo_server = '127.0.0.1',usingMongo = 1):
         db = conntoMongoWeiboProvince(mongo_server)
         for current_connection_name in db.collection_names():
             origin_text = []
+            word_set = set()
             print(current_connection_name)
             current_connection = db[current_connection_name]
             query_cursor = current_connection.find()
@@ -488,9 +490,16 @@ def getProvince_text(mongo_server = '127.0.0.1',usingMongo = 1):
                     continue
                 origin_text.append(weibo_cut_list)
 
-            dictionary = corpora.Dictionary(origin_text)
-            corpus = [dictionary.doc2bow(text) for text in origin_text]
-            lda = LdaMulticore(corpus=corpus, id2word=dictionary, num_topics=100, passes=2, chunksize=10000, workers=7)
+            frequency = defaultdict(int)
+            for text in origin_text:
+                for token in text:
+                    frequency[token] += 1
+            texts = [[token for token in text if frequency[token] > 1]
+                     for text in origin_text]
+
+            word_count_dict = corpora.Dictionary(origin_text)
+            corpus = [word_count_dict.doc2bow(text) for text in origin_text]
+            lda = LdaModel(corpus=corpus, id2word=word_count_dict, num_topics=50)
             topics_r = lda.print_topics(20)
             print(lda.top_topics(20))
             # print(topics_r)
