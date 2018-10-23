@@ -512,10 +512,34 @@ def getProvince_text(mongo_server = '127.0.0.1',usingMongo = 1):
                 topic_name.write(str(v) + '\n')
             topic_name.close()
 
-
-
-
-
+# weibofilefolder = 'D:/chinadream/data'
+def get_city_list(file_path_list):
+    ignore_region = ['其他','海外']
+    output_file = 'D:/chinadream/city/'
+    for current_file in file_path_list:
+        with open(current_file, 'r', encoding='utf-8') as f:
+            s_t = time()
+            for line in f:
+                line_section = line.split('\t')
+                current_text = getText(line_section)
+                current_detailed_location = getLocation(line_section)
+                current_location_list = current_detailed_location.split()
+                province = current_location_list[0]
+                if(province in ignore_region):
+                    continue
+                elif(province == '香港' or province == '澳门'):
+                    city = province
+                else:
+                    if(len(current_location_list) < 2):
+                        continue
+                    city = current_location_list[1]
+                city_file = codecs.open(output_file+city+'.txt','w+',encoding='utf-8')
+                city_file.write(current_text)
+                city_file.write('\n')
+                city_file.close()
+            e_t = time()
+        print('current_file:' + current_file)
+        print('current file process time: ' + str(e_t - s_t))
 
 
 
