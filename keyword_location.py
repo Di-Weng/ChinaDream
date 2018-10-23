@@ -177,8 +177,12 @@ if __name__ == '__main__':
     # get_echartsdata(percent_output)
     # print(percent_output)
 
-    keyword_map = province_map_echarts(keyword_location)
-    stand_output(keyword_map)
+
+    # #全省地图
+    # keyword_map = province_map_echarts(keyword_location)
+    # stand_output(keyword_map)
+
+
     # for keyword, keyword_dic in keyword_map.items():
     #     print(keyword)
     #     print(keyword_map)
