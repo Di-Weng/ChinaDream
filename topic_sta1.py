@@ -469,7 +469,7 @@ def getCity_text(mongo_server = '127.0.0.1',usingMongo = 1):
         folderlist = os.listdir(city_folder)
         for current_city in folderlist:
             origin_text = []
-            open_city_file = open(current_city,'r',encoding='utf-8')
+            open_city_file = open(weibocityfilefolder+current_city,'r',encoding='utf-8')
             for temp_line in open_city_file:
                 weibo_origin = filer.filer(temp_line).replace('/','')
                 if (len(weibo_origin) == 0):
@@ -561,6 +561,7 @@ def collect_city_file(file_path_list):
     output_file_1 = 'D:/chinadream/keyword_location/'
     output_file_2 = 'D:/chinadream/time_keyword_location/'
     for current_file in file_path_list:
+        print(current_file)
         with open(current_file, 'r', encoding='utf-8') as f:
             s_t = time()
             for line in f:
