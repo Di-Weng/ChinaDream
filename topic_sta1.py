@@ -455,7 +455,8 @@ def classify_Province(file_path_list, usingMongo = 1):
             print('dismiss count: ' + str(dismiss))
             print('current file:\t' + str(current_file) + '\tprocess time:\t' + str(e_t - s_t))
 
-def getCity_text(mongo_server = '127.0.0.1',usingMongo = 1):
+#有待组装
+def keyword_lda(mongo_server = '127.0.0.1',usingMongo = 1):
     jieba.load_userdict("data/user_dict.txt")
     stop_word = []
     weibocityfilefolder = 'D:/chinadream/city/'
@@ -464,7 +465,6 @@ def getCity_text(mongo_server = '127.0.0.1',usingMongo = 1):
             stop_word.append(item.strip())
 
     if(not usingMongo):
-        print('Method not available!')
         city_folder = 'D:/chinadream/city/'
         folderlist = os.listdir(city_folder)
         for current_city in folderlist:
@@ -498,6 +498,7 @@ def getCity_text(mongo_server = '127.0.0.1',usingMongo = 1):
                                        corpus)  # store to disk, for later use
             lda = LdaMulticore(corpus=corpus, id2word=word_count_dict, num_topics=50, workers=7)
             topics_r = lda.print_topics(20)
+            lda.get_document_topics()
             print(topics_r)
             # print(topics_r)
             print('____________')
@@ -506,8 +507,6 @@ def getCity_text(mongo_server = '127.0.0.1',usingMongo = 1):
             for v in topics_r:
                 topic_name.write(str(v) + '\n')
             topic_name.close()
-
-
         return
     else:
         db = conntoMongoWeiboProvince(mongo_server)
@@ -556,6 +555,8 @@ def getCity_text(mongo_server = '127.0.0.1',usingMongo = 1):
             topic_name.close()
 
 # weibofilefolder = 'D:/chinadream/data'
+# 按时间-中国梦维度-市（区）存储文件
+# 按中国梦维度-市(区)存储文件
 def collect_city_file(file_path_list):
     ignore_region = ['其他','海外']
     output_file_1 = 'D:/chinadream/keyword_location/'

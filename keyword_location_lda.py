@@ -15,4 +15,4 @@ from gensim.corpora import Dictionary
 import codecs
 
 if __name__=='__main__':
-    topic_sta1.getCity_text(usingMongo = 0)
+    topic_sta1.keyword_lda(usingMongo = 0)
