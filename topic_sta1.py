@@ -469,7 +469,7 @@ def getCity_text(mongo_server = '127.0.0.1',usingMongo = 1):
         folderlist = os.listdir(city_folder)
         for current_city in folderlist:
             origin_text = []
-            open_city_file = open(current_city,'r',encoding='utf-8')
+            open_city_file = open(weibocityfilefolder+current_city,'r',encoding='utf-8')
             for temp_line in open_city_file:
                 weibo_origin = filer.filer(temp_line).replace('/','')
                 if (len(weibo_origin) == 0):
@@ -560,6 +560,7 @@ def collect_city_file(file_path_list):
     ignore_region = ['其他','海外']
     output_file = 'D:/chinadream/city/'
     for current_file in file_path_list:
+        print(current_file)
         with open(current_file, 'r', encoding='utf-8') as f:
             s_t = time()
             for line in f:
@@ -567,6 +568,8 @@ def collect_city_file(file_path_list):
                 current_text = getText(line_section)
                 current_detailed_location = getLocation(line_section)
                 current_location_list = current_detailed_location.split()
+                if(len(current_location_list) == 0):
+                    continue
                 province = current_location_list[0]
                 if(province in ignore_region):
                     continue
