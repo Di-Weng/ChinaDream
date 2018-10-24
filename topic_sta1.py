@@ -558,16 +558,21 @@ def getCity_text(mongo_server = '127.0.0.1',usingMongo = 1):
 # weibofilefolder = 'D:/chinadream/data'
 def collect_city_file(file_path_list):
     ignore_region = ['其他','海外']
-    output_file = 'D:/chinadream/city/'
+    output_file_1 = 'D:/chinadream/keyword_location/'
+    output_file_2 = 'D:/chinadream/time_keyword_location/'
     for current_file in file_path_list:
         with open(current_file, 'r', encoding='utf-8') as f:
             s_t = time()
             for line in f:
                 line_section = line.split('\t')
                 current_text = getText(line_section)
+                current_keyword_list = getKeywordList(line_section)
                 current_detailed_location = getLocation(line_section)
                 current_location_list = current_detailed_location.split()
+                if(len(current_location_list) == 0):
+                    continue
                 province = current_location_list[0]
+
                 if(province in ignore_region):
                     continue
                 elif(province == '香港' or province == '澳门'):
@@ -576,10 +581,29 @@ def collect_city_file(file_path_list):
                     if(len(current_location_list) < 2):
                         continue
                     city = current_location_list[1]
-                city_file = codecs.open(output_file+city+'.txt','a+',encoding='utf-8')
-                city_file.write(current_text)
-                city_file.write('\n')
-                city_file.close()
+                for current_keyword in current_keyword_list:
+                    current_out_path_1 = output_file_1 + current_keyword
+                    temp1 = current_file.split('/')[-1]
+                    temp2 = temp1.split('.')[0]
+                    current_out_path_2_time = output_file_2 + temp2
+                    if(not os.path.exists(current_out_path_1)):
+                        os.mkdir(current_out_path_1)
+                    if(not os.path.exists(current_out_path_2_time)):
+                        os.mkdir(current_out_path_2_time)
+
+                    keyword_location_file = codecs.open(current_out_path_1 + '/' + city + '.txt','a+',encoding='utf-8')
+                    keyword_location_file.write(current_text)
+                    keyword_location_file.write('\n')
+                    keyword_location_file.close()
+
+                    current_out_path_2_time_keyword = current_out_path_2_time + '/' + current_keyword
+
+                    if(not os.path.exists(current_out_path_2_time_keyword)):
+                        os.mkdir(current_out_path_2_time_keyword)
+                    time_keyword_location_file = codecs.open(current_out_path_2_time_keyword + '/' + city + '.txt', 'a+', encoding='utf-8')
+                    time_keyword_location_file.write(current_text)
+                    time_keyword_location_file.write('\n')
+                    time_keyword_location_file.close()
             e_t = time()
         print('current_file:' + current_file)
         print('current file process time: ' + str(e_t - s_t))
