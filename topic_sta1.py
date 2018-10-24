@@ -455,16 +455,59 @@ def classify_Province(file_path_list, usingMongo = 1):
             print('dismiss count: ' + str(dismiss))
             print('current file:\t' + str(current_file) + '\tprocess time:\t' + str(e_t - s_t))
 
-def getProvince_text(mongo_server = '127.0.0.1',usingMongo = 1):
+def getCity_text(mongo_server = '127.0.0.1',usingMongo = 1):
     jieba.load_userdict("data/user_dict.txt")
     stop_word = []
-
+    weibocityfilefolder = 'D:/chinadream/city/'
     with open('data/stop_word.txt', 'r', encoding='utf-8') as sw_f:
         for item in sw_f:
             stop_word.append(item.strip())
 
     if(not usingMongo):
         print('Method not available!')
+        city_folder = 'D:/chinadream/city/'
+        folderlist = os.listdir(city_folder)
+        for current_city in folderlist:
+            origin_text = []
+            open_city_file = open(current_city,'r',encoding='utf-8')
+            for temp_line in open_city_file:
+                weibo_origin = filer.filer(temp_line).replace('/','')
+                if (len(weibo_origin) == 0):
+                    continue
+                weibo_cut = list(jieba.cut(weibo_origin))
+                weibo_cut_list = []
+                for items in weibo_cut:
+                    if (items not in stop_word and len(items.strip()) > 0):
+                        weibo_cut_list.append(items)
+                if(len(weibo_cut_list) < 5):
+                    continue
+                origin_text.append(weibo_cut_list)
+
+            frequency = defaultdict(int)
+            for text in origin_text:
+                for token in text:
+                    frequency[token] += 1
+            texts = [[token for token in text if frequency[token] > 1]
+                     for text in origin_text]
+            print(texts)
+
+            word_count_dict = corpora.Dictionary(texts)
+            corpus = [word_count_dict.doc2bow(text) for text in texts]
+            print(corpus)
+            corpora.MmCorpus.serialize('data/topic/' + current_city + '_mmcorpus.mm',
+                                       corpus)  # store to disk, for later use
+            lda = LdaMulticore(corpus=corpus, id2word=word_count_dict, num_topics=50, workers=7)
+            topics_r = lda.print_topics(20)
+            print(topics_r)
+            # print(topics_r)
+            print('____________')
+            topic_name = codecs.open('result/topic/' + current_city + '_topics_result.txt', 'w',
+                                     encoding='utf-8')
+            for v in topics_r:
+                topic_name.write(str(v) + '\n')
+            topic_name.close()
+
+
         return
     else:
         db = conntoMongoWeiboProvince(mongo_server)

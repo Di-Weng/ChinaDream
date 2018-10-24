@@ -15,4 +15,4 @@ from gensim.corpora import Dictionary
 import codecs
 
 if __name__=='__main__':
-    topic_sta1.getProvince_text()
+    topic_sta1.getProvince_text(usingMongo = 0)
