@@ -135,7 +135,7 @@ def word_coOcurrence(input_dic, word_list):
             if (keyword1 == keyword2):
                 continue
             input_dic['normal'][keyword1][keywords_list.index(keyword2)] += 1
-            if(len(keywords_list) > 1):
+            if(len(word_list) > 1):
                 input_dic['together'][keyword1][keywords_list.index(keyword2)] += 1
     return input_dic
 
@@ -515,50 +515,51 @@ def keyword_lda(mongo_server = '127.0.0.1',usingMongo = 1):
             topic_name.close()
         return
     else:
-        db = conntoMongoWeiboProvince(mongo_server)
-        for current_connection_name in db.collection_names():
-            origin_text = []
-            word_set = set()
-            print(current_connection_name)
-            current_connection = db[current_connection_name]
-            query_cursor = current_connection.find()
-            for mongo_doc in query_cursor:
-                json_file = mongo_doc['line']
-                dic_file = json.loads(json_file)
-                weibo_origin = dic_file['text']
-                weibo_origin = filer.filer(weibo_origin).replace('/','')
-                if (len(weibo_origin) == 0):
-                    continue
-                weibo_cut = list(jieba.cut(weibo_origin))
-                weibo_cut_list = []
-                for items in weibo_cut:
-                    if (items not in stop_word and len(items.strip()) > 0):
-                        weibo_cut_list.append(items)
-                if(len(weibo_cut_list) < 5):
-                    continue
-                origin_text.append(weibo_cut_list)
-
-            frequency = defaultdict(int)
-            for text in origin_text:
-                for token in text:
-                    frequency[token] += 1
-            texts = [[token for token in text if frequency[token] > 1]
-                     for text in origin_text]
-            print(texts)
-
-            word_count_dict = corpora.Dictionary(texts)
-            corpus = [word_count_dict.doc2bow(text) for text in texts]
-            print(corpus)
-            corpora.MmCorpus.serialize('data/topic/' + current_connection_name+ '_mmcorpus.mm', corpus)  # store to disk, for later use
-            lda = LdaMulticore(corpus=corpus, id2word=word_count_dict, num_topics=50,workers=7)
-            topics_r = lda.print_topics(20)
-            print(topics_r)
-            # print(topics_r)
-            print('____________')
-            topic_name = codecs.open('result/topic/' + current_connection_name +'_topics_result.txt', 'w',encoding='utf-8')
-            for v in topics_r:
-                topic_name.write(str(v) + '\n')
-            topic_name.close()
+        print('using mongo')
+        # db = conntoMongoWeiboProvince(mongo_server)
+        # for current_connection_name in db.collection_names():
+        #     origin_text = []
+        #     word_set = set()
+        #     print(current_connection_name)
+        #     current_connection = db[current_connection_name]
+        #     query_cursor = current_connection.find()
+        #     for mongo_doc in query_cursor:
+        #         json_file = mongo_doc['line']
+        #         dic_file = json.loads(json_file)
+        #         weibo_origin = dic_file['text']
+        #         weibo_origin = filer.filer(weibo_origin).replace('/','')
+        #         if (len(weibo_origin) == 0):
+        #             continue
+        #         weibo_cut = list(jieba.cut(weibo_origin))
+        #         weibo_cut_list = []
+        #         for items in weibo_cut:
+        #             if (items not in stop_word and len(items.strip()) > 0):
+        #                 weibo_cut_list.append(items)
+        #         if(len(weibo_cut_list) < 5):
+        #             continue
+        #         origin_text.append(weibo_cut_list)
+        #
+        #     frequency = defaultdict(int)
+        #     for text in origin_text:
+        #         for token in text:
+        #             frequency[token] += 1
+        #     texts = [[token for token in text if frequency[token] > 1]
+        #              for text in origin_text]
+        #     print(texts)
+        #
+        #     word_count_dict = corpora.Dictionary(texts)
+        #     corpus = [word_count_dict.doc2bow(text) for text in texts]
+        #     print(corpus)
+        #     corpora.MmCorpus.serialize('data/topic/' + current_connection_name+ '_mmcorpus.mm', corpus)  # store to disk, for later use
+        #     lda = LdaMulticore(corpus=corpus, id2word=word_count_dict, num_topics=50,workers=7)
+        #     topics_r = lda.print_topics(20)
+        #     print(topics_r)
+        #     # print(topics_r)
+        #     print('____________')
+        #     topic_name = codecs.open('result/topic/' + current_connection_name +'_topics_result.txt', 'w',encoding='utf-8')
+        #     for v in topics_r:
+        #         topic_name.write(str(v) + '\n')
+        #     topic_name.close()
 
 # weibofilefolder = 'D:/chinadream/data'
 # 按时间-中国梦维度-市（区）存储文件
