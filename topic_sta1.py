@@ -134,7 +134,9 @@ def word_coOcurrence(input_dic, word_list):
             keyword2 = keyword2.replace(',', '')
             if (keyword1 == keyword2):
                 continue
-            input_dic[keyword1][keywords_list.index(keyword2)] += 1
+            input_dic['normal'][keyword1][keywords_list.index(keyword2)] += 1
+            if(len(keywords_list) > 1):
+                input_dic['together'][keyword1][keywords_list.index(keyword2)] += 1
     return input_dic
 
 # return dic[keyword] = (topic_count)['社会', '国际', '体育', '科技', '娱乐', '财经', '军事']
@@ -382,12 +384,16 @@ def keyword_location(file_paht_list):
         print('dismiss count: ' + str(dismiss_count))
         print('current collection process time: ' + str(e_t - s_t))
 
+#边权重：jaccard系数： 共同出现/（各自单独出现之和-共同出现）
 def keyword_coOccurrence(file_path_list):
     dismiss_count = 0
 
     output_dic = {}
+    output_dic['together'] = {}
+    output_dic['normal'] = {}
     for keyword in keywords_list:
-        output_dic[keyword] = [0 for i in range(len(keywords_list))]
+        output_dic['together'][keyword] = [0 for i in range(len(keywords_list))]
+        output_dic['normal'][keyword] = [0 for i in range(len(keywords_list))]
 
     for current_file in file_path_list:
         with open(current_file, 'r', encoding='utf-8') as f:
