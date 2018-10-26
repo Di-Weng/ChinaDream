@@ -130,13 +130,12 @@ def conntoMongoWeiboProvince(ServerURL = '127.0.0.1'):
 def word_coOcurrence(input_dic, word_list):
     for keyword1 in word_list:
         keyword1 = keyword1.replace(',', '')
+        input_dic['seperate'][keyword1] += 1
         for keyword2 in word_list:
             keyword2 = keyword2.replace(',', '')
             if (keyword1 == keyword2):
                 continue
-            input_dic['normal'][keyword1][keywords_list.index(keyword2)] += 1
-            if(len(word_list) > 1):
-                input_dic['together'][keyword1][keywords_list.index(keyword2)] += 1
+            input_dic['together'][keyword1][keywords_list.index(keyword2)] += 1
     return input_dic
 
 # return dic[keyword] = (topic_count)['社会', '国际', '体育', '科技', '娱乐', '财经', '军事']
@@ -390,10 +389,10 @@ def keyword_coOccurrence(file_path_list):
 
     output_dic = {}
     output_dic['together'] = {}
-    output_dic['normal'] = {}
+    output_dic['seperate'] = {}
     for keyword in keywords_list:
         output_dic['together'][keyword] = [0 for i in range(len(keywords_list))]
-        output_dic['normal'][keyword] = [0 for i in range(len(keywords_list))]
+        output_dic['seperate'][keyword] = 0
 
     for current_file in file_path_list:
         with open(current_file, 'r', encoding='utf-8') as f:
@@ -403,7 +402,7 @@ def keyword_coOccurrence(file_path_list):
                 current_keyword_list = getKeywordList(line_section)
 
 
-                if(len(current_keyword_list) <= 1):
+                if(len(current_keyword_list) == 0):
                     continue
                 output_dic = word_coOcurrence(output_dic, current_keyword_list)
             e_t = time()
