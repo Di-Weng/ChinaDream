@@ -461,7 +461,7 @@ def classify_Province(file_path_list, usingMongo = 1):
             print('current file:\t' + str(current_file) + '\tprocess time:\t' + str(e_t - s_t))
 
 #有待组装
-def keyword_lda(mongo_server = '127.0.0.1',usingMongo = 1):
+def keyword_lda(mongo_server = '127.0.0.1',usingMongo = 0):
     jieba.load_userdict("data/user_dict.txt")
     stop_word = []
     weibocityfilefolder = 'D:/chinadream/city/'
@@ -470,48 +470,64 @@ def keyword_lda(mongo_server = '127.0.0.1',usingMongo = 1):
             stop_word.append(item.strip())
 
     if(not usingMongo):
-        city_folder = 'D:/chinadream/city/'
-        folderlist = os.listdir(city_folder)
-        for current_city in folderlist:
-            origin_text = []
-            open_city_file = open(weibocityfilefolder+current_city,'r',encoding='utf-8')
-            for temp_line in open_city_file:
-                weibo_origin = filer.filer(temp_line).replace('/','')
-                if (len(weibo_origin) == 0):
-                    continue
-                weibo_cut = list(jieba.cut(weibo_origin))
-                weibo_cut_list = []
-                for items in weibo_cut:
-                    if (items not in stop_word and len(items.strip()) > 0):
-                        weibo_cut_list.append(items)
-                if(len(weibo_cut_list) < 5):
-                    continue
-                origin_text.append(weibo_cut_list)
+        keyword_folder = 'D:/chinadream/keyword_location/'
+        folderlist = os.listdir(keyword_folder)
+        for current_keyword in folderlist:
+            current_keyword_folder = keyword_folder + current_keyword + '/'
+            current_city_file_list = os.listdir()
+
+            #corpus_text 里的每个list代表一个城市的所有文本
+            corpus_text = []
+            corpus_city = {}
+            count = 0
+            for current_city_file in current_city_file_list:
+                origin_text = []
+                open_keyword_file = open(current_keyword_folder + current_city_file,'r',encoding='utf-8')
+                for temp_line in open_keyword_file:
+                    weibo_origin = filer.filer(temp_line).replace('/','')
+                    if (len(weibo_origin) == 0):
+                        continue
+                    weibo_cut = list(jieba.cut(weibo_origin))
+                    weibo_cut_list = []
+                    for items in weibo_cut:
+                        if (items not in stop_word and len(items.strip()) > 0):
+                            if(items == current_keyword):
+                                continue
+                            weibo_cut_list.append(items)
+                    if(len(weibo_cut_list) < 5):
+                        continue
+                    for current_cut in weibo_cut_list:
+                        origin_text.append(current_cut)
+                corpus_text[current_city_file] = count
+                corpus_text.append(origin_text)
+                count+=0
 
             frequency = defaultdict(int)
-            for text in origin_text:
-                for token in text:
+            for city_file in corpus_text:
+                for token in city_file:
                     frequency[token] += 1
             texts = [[token for token in text if frequency[token] > 1]
-                     for text in origin_text]
+                     for text in corpus_text]
             print(texts)
 
             word_count_dict = corpora.Dictionary(texts)
             corpus = [word_count_dict.doc2bow(text) for text in texts]
             print(corpus)
-            corpora.MmCorpus.serialize('data/topic/' + current_city + '_mmcorpus.mm',
+            corpora.MmCorpus.serialize('data/keyword_location/' + current_keyword + '_mmcorpus.mm',
                                        corpus)  # store to disk, for later use
-            lda = LdaMulticore(corpus=corpus, id2word=word_count_dict, num_topics=50, workers=7)
-            topics_r = lda.print_topics(20)
-            lda.get_document_topics()
-            print(topics_r)
+            lda = LdaMulticore(corpus=corpus, id2word=word_count_dict, num_topics=10, workers=7)
+            # for city_corpus in corpus:
+            #
+            # topics_r = lda.print_topics(20)
+            # lda.get_document_topics()
             # print(topics_r)
-            print('____________')
-            topic_name = codecs.open('result/topic/' + current_city + '_topics_result.txt', 'w',
-                                     encoding='utf-8')
-            for v in topics_r:
-                topic_name.write(str(v) + '\n')
-            topic_name.close()
+            # # print(topics_r)
+            # print('____________')
+            # topic_name = codecs.open('result/topic/' + current_city + '_topics_result.txt', 'w',
+            #                          encoding='utf-8')
+            # for v in topics_r:
+            #     topic_name.write(str(v) + '\n')
+            # topic_name.close()
         return
     else:
         print('using mongo')
