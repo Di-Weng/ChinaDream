@@ -18,6 +18,7 @@ import pickle
 import jieba
 from gensim import corpora
 from gensim.models import LdaModel
+from gensim.test.utils import datapath
 from gensim.models import LdaMulticore
 import codecs
 from collections import defaultdict
@@ -115,15 +116,26 @@ def conntoMongoWeiboNSeg(ServerURL = '127.0.0.1'):
     db = conn.weiboDBNSeg
     return db
 
-#按省份划分collection
-def conntoMongoWeiboProvince(ServerURL = '127.0.0.1'):
+#按无时间维度 先按keyword划分collection，每个collection为该keyword下所有城市的话题分布
+def conntoMongoKeywordLocation(ServerURL = '127.0.0.1'):
     conn = pymongo.MongoClient(ServerURL,
                    27017,
                    username='wd',
                    password='wd123456',
                   )
     # db = conn.weiboProvince_text
-    db = conn.weiboProvince
+    db = conn.keywordLocation
+    return db
+
+#按无时间维度 keywordLocation 的话题
+def conntoMongoKeywordLocation_topic(ServerURL = '127.0.0.1'):
+    conn = pymongo.MongoClient(ServerURL,
+                   27017,
+                   username='wd',
+                   password='wd123456',
+                  )
+    # db = conn.weiboProvince_text
+    db = conn.keywordLocationTopic
     return db
 
 @jit
@@ -410,58 +422,8 @@ def keyword_coOccurrence(file_path_list):
         print('dismiss count: ' + str(dismiss_count))
         print('current collection' + str(current_file) + 'process time: ' + str(e_t - s_t))
 
-def classify_Province(file_path_list, usingMongo = 1):
-    # usingMongo 0 代表使用文件存储；1代表使用MongoDB存储
-    dismiss = 0
-    existing_province = set()
-    if (not usingMongo):
-        weiboprovincefilefolder = 'D:/chinadream/province/'
-        for current_file in file_path_list:
-            with open(current_file, 'r', encoding='utf-8') as f:
-                s_t = time()
-                for line in f:
-                    line_section = line.split('\t')
-
-                    location = getLocation(line_section)
-                    if(len(location) == 0):
-                        dismiss += 1
-                        continue
-                    current_province = location.split()[0]
-                    write_file_path = weiboprovincefilefolder + current_province + '.txt'
-                    write_file = open(write_file_path,'a+', encoding = 'utf-8')
-                    write_file.write(line)
-                    write_file.write('\n')
-                    # print(current_province)
-            e_t = time()
-            print(existing_province)
-            print('dismiss count: ' + str(dismiss))
-            print('current collection' + str(current_file) + 'process time: ' + str(e_t - s_t))
-    else:
-        db = conntoMongoWeiboProvince()
-        for current_file in file_path_list:
-            with open(current_file, 'r', encoding='utf-8') as f:
-                s_t = time()
-                for line in f:
-                    line_section = line.split('\t')
-                    json_data = line_section[-1].strip()
-                    location = getLocation(line_section)
-                    if (len(location) == 0):
-                        dismiss += 1
-                        continue
-                    current_province = location.split()[0]
-                    data_toinsert ={
-                        'location':location,
-                        'line': json_data
-                    }
-                    current_collection = db[current_province]
-                    result = current_collection.insert_one(data_toinsert)
-            e_t = time()
-            print(existing_province)
-            print('dismiss count: ' + str(dismiss))
-            print('current file:\t' + str(current_file) + '\tprocess time:\t' + str(e_t - s_t))
-
 #有待组装
-def keyword_lda(mongo_server = '127.0.0.1',usingMongo = 0):
+def keyword_location_lda(mongo_server = '127.0.0.1',usingMongo = 0):
     jieba.load_userdict("data/user_dict.txt")
     stop_word = []
     weibocityfilefolder = 'D:/chinadream/city/'
@@ -469,112 +431,87 @@ def keyword_lda(mongo_server = '127.0.0.1',usingMongo = 0):
         for item in sw_f:
             stop_word.append(item.strip())
 
-    if(not usingMongo):
-        keyword_folder = 'D:/chinadream/keyword_location/'
-        folderlist = os.listdir(keyword_folder)
-        for current_keyword in folderlist:
-            current_keyword_folder = keyword_folder + current_keyword + '/'
-            current_city_file_list = os.listdir()
+    keyword_folder = 'D:/chinadream/keyword_location/'
+    folderlist = os.listdir(keyword_folder)
+    for current_keyword in folderlist:
+        current_keyword_cut_list = current_keyword.split(',')
+        current_keyword_banned_list = []
 
-            #corpus_text 里的每个list代表一个城市的所有文本
-            corpus_text = []
-            corpus_city = {}
-            count = 0
-            for current_city_file in current_city_file_list:
-                origin_text = []
-                open_keyword_file = open(current_keyword_folder + current_city_file,'r',encoding='utf-8')
-                for temp_line in open_keyword_file:
-                    weibo_origin = filer.filer(temp_line).replace('/','')
-                    if (len(weibo_origin) == 0):
-                        continue
-                    weibo_cut = list(jieba.cut(weibo_origin))
-                    weibo_cut_list = []
-                    for items in weibo_cut:
-                        if (items not in stop_word and len(items.strip()) > 0):
-                            if(items == current_keyword):
-                                continue
-                            weibo_cut_list.append(items)
-                    if(len(weibo_cut_list) < 5):
-                        continue
-                    for current_cut in weibo_cut_list:
-                        origin_text.append(current_cut)
-                corpus_text[current_city_file] = count
-                corpus_text.append(origin_text)
-                count+=0
+        # 全切
+        for temp1 in current_keyword_cut_list:
+            cut_list = jieba.cut(temp1)
+            for temp2 in cut_list:
+                current_keyword_banned_list.append(temp2)
 
-            frequency = defaultdict(int)
-            for city_file in corpus_text:
-                for token in city_file:
-                    frequency[token] += 1
-            texts = [[token for token in text if frequency[token] > 1]
-                     for text in corpus_text]
-            print(texts)
+        current_keyword_folder = keyword_folder + current_keyword + '/'
+        current_city_file_list = os.listdir(current_keyword_folder)
 
-            word_count_dict = corpora.Dictionary(texts)
-            corpus = [word_count_dict.doc2bow(text) for text in texts]
-            print(corpus)
-            corpora.MmCorpus.serialize('data/keyword_location/' + current_keyword + '_mmcorpus.mm',
-                                       corpus)  # store to disk, for later use
-            lda = LdaMulticore(corpus=corpus, id2word=word_count_dict, num_topics=10, workers=7)
-            # for city_corpus in corpus:
-            #
-            # topics_r = lda.print_topics(20)
-            # lda.get_document_topics()
-            # print(topics_r)
-            # # print(topics_r)
-            # print('____________')
-            # topic_name = codecs.open('result/topic/' + current_city + '_topics_result.txt', 'w',
-            #                          encoding='utf-8')
-            # for v in topics_r:
-            #     topic_name.write(str(v) + '\n')
-            # topic_name.close()
-        return
-    else:
-        print('using mongo')
-        # db = conntoMongoWeiboProvince(mongo_server)
-        # for current_connection_name in db.collection_names():
-        #     origin_text = []
-        #     word_set = set()
-        #     print(current_connection_name)
-        #     current_connection = db[current_connection_name]
-        #     query_cursor = current_connection.find()
-        #     for mongo_doc in query_cursor:
-        #         json_file = mongo_doc['line']
-        #         dic_file = json.loads(json_file)
-        #         weibo_origin = dic_file['text']
-        #         weibo_origin = filer.filer(weibo_origin).replace('/','')
-        #         if (len(weibo_origin) == 0):
-        #             continue
-        #         weibo_cut = list(jieba.cut(weibo_origin))
-        #         weibo_cut_list = []
-        #         for items in weibo_cut:
-        #             if (items not in stop_word and len(items.strip()) > 0):
-        #                 weibo_cut_list.append(items)
-        #         if(len(weibo_cut_list) < 5):
-        #             continue
-        #         origin_text.append(weibo_cut_list)
-        #
-        #     frequency = defaultdict(int)
-        #     for text in origin_text:
-        #         for token in text:
-        #             frequency[token] += 1
-        #     texts = [[token for token in text if frequency[token] > 1]
-        #              for text in origin_text]
-        #     print(texts)
-        #
-        #     word_count_dict = corpora.Dictionary(texts)
-        #     corpus = [word_count_dict.doc2bow(text) for text in texts]
-        #     print(corpus)
-        #     corpora.MmCorpus.serialize('data/topic/' + current_connection_name+ '_mmcorpus.mm', corpus)  # store to disk, for later use
-        #     lda = LdaMulticore(corpus=corpus, id2word=word_count_dict, num_topics=50,workers=7)
-        #     topics_r = lda.print_topics(20)
-        #     print(topics_r)
-        #     # print(topics_r)
-        #     print('____________')
-        #     topic_name = codecs.open('result/topic/' + current_connection_name +'_topics_result.txt', 'w',encoding='utf-8')
-        #     for v in topics_r:
-        #         topic_name.write(str(v) + '\n')
-        #     topic_name.close()
+        #corpus_text 里的每个list代表一个城市的所有文本
+        corpus_text = []
+        corpus_city = {}
+        count = 0
+        for current_city_file in current_city_file_list:
+            origin_text = []
+            open_keyword_file = open(current_keyword_folder + current_city_file,'r',encoding='utf-8')
+            for temp_line in open_keyword_file:
+                weibo_origin = filer.filer(temp_line).replace('/','')
+                if (len(weibo_origin) == 0):
+                    continue
+                weibo_cut = list(jieba.cut(weibo_origin))
+                weibo_cut_list = []
+                for items in weibo_cut:
+                    if (items not in stop_word and len(items.strip()) > 0):
+                        if(items in current_keyword_banned_list):
+                            continue
+                        weibo_cut_list.append(items)
+                if(len(weibo_cut_list) < 5):
+                    continue
+                for current_cut in weibo_cut_list:
+                    origin_text.append(current_cut)
+            corpus_city[current_city_file] = count
+            corpus_text.append(origin_text)
+            count+=0
+
+        frequency = defaultdict(int)
+        for city_file in corpus_text:
+            for token in city_file:
+                frequency[token] += 1
+        texts = [[token for token in text if frequency[token] > 1]
+                 for text in corpus_text]
+
+        word_count_dict = corpora.Dictionary(texts)
+        corpus = [word_count_dict.doc2bow(text) for text in texts]
+
+        lda = LdaMulticore(corpus=corpus, id2word=word_count_dict, num_topics=20, workers=7)
+        model_file = 'data/keyword_location/model/' + current_keyword + '_lda.model'
+
+        lda.save(model_file)
+
+        for city_name, city_index in corpus_city.items():
+            city_corpus = corpus[city_index]
+            doc_lda = lda.get_document_topics(city_corpus)  # 得到新文档的主题分布
+            db = conntoMongoKeywordLocation()
+            current_collection = db[current_keyword]
+            data_toinsert = {
+                'city': city_name,
+                'topic_distribution': str(doc_lda)
+            }
+            result = current_collection.insert_one(data_toinsert)
+
+        db = conntoMongoKeywordLocation_topic()
+        current_collection = db['topic']
+        data_toinsert = {
+            'keyword': current_keyword,
+            'all_topic': str(lda.print_topics(-1))
+        }
+        result = current_collection.insert_one(data_toinsert)
+            #write to file
+            # output_file = codecs.open('result/keyword_location/city_topic/' + current_keyword + '_city_topics.txt', 'a+', encoding='utf-8')
+            # output_file.write(city_name)
+            # output_file.write('\t')
+            # output_file.write(str(doc_lda))
+            # output_file.write('\n')
+    return
 
 # weibofilefolder = 'D:/chinadream/data'
 # 按时间-中国梦维度-市（区）存储文件
