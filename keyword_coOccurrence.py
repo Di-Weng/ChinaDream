@@ -28,6 +28,16 @@ def get_result_dic(filefolder):
     result_dic = topic_sta1.keyword_coOccurrence(file_path_list)
     print(result_dic)
 
+def jaccard_coefficient(node1,node2,result_dic):
+    jaccard_coef = 0
+    nodes_intersection = result_dic['together'][node1][keywords_list.index(node2)]
+    nodes_union = result_dic['seperate'][node1] + result_dic['seperate'][node2] - nodes_intersection
+    jaccard_coef = float(nodes_intersection) / nodes_union
+    print('node1:%s\tnode2:%s\t并集：%f\t交集:%f\tjaccard_coef:%f' % (node1,node2,nodes_union,nodes_intersection,jaccard_coef))
+    return jaccard_coef
+
+
+
 def to_gephi_edge_csv(input_dic,node_size_dic):
     used_node_index = []
     node_id_dic = {}
@@ -35,28 +45,16 @@ def to_gephi_edge_csv(input_dic,node_size_dic):
     outfile.write('Id,Label,Modularity_Class,Value\n')
     temp_id = 0
     node_value_list = []
-    for current_node, current_node_list in input_dic.items():
-        node_value = list_sum(current_node_list)
-        node_value_list.append(node_value)
+    modularity_list = []
+    for current_node in input_dic['together'].keys():
         node_id_dic[current_node] = temp_id
         temp_id += 1
 
-    print(node_value_list)
-
-    node_value_max = np.max(node_value_list)
-    node_value_min = np.min(node_value_list)
-
-    modularity_list = []
-
-    for current_node, current_node_list in input_dic.items():
+    for current_node, current_node_list in input_dic['together'].items():
         modularity_list.append(current_node)
-        node_value_temp = list_sum(current_node_list)
+        node_value = list_sum(current_node_list)
 
-        #取对数缩小绝对数值
-        node_value = math.log(node_value)
 
-        #再缩放
-        node_std_value = float((node_value - node_value_min)) / (node_value_max - node_value_min)
 
         outfile.write(str(node_id_dic[current_node]))
         outfile.write(',')
@@ -64,7 +62,7 @@ def to_gephi_edge_csv(input_dic,node_size_dic):
         outfile.write(',')
         outfile.write(str(modularity_list.index(current_node)))
         outfile.write(',')
-        outfile.write(str(node_size_dic[current_node]))
+        outfile.write(str(math.log(node_size_dic[current_node])))
         outfile.write('\n')
 
     outfile.close()
@@ -76,10 +74,8 @@ def to_gephi_edge_csv(input_dic,node_size_dic):
     for current_count_list in input_dic.values():
         for current_count in current_count_list:
             coOccurence_list.append(current_count)
-    total_coOccurence_max = np.max(coOccurence_list)
-    total_coOccurence_min = np.min(coOccurence_list)
 
-    for current_keyword, current_count_list in input_dic.items():
+    for current_keyword, current_count_list in input_dic['together'].items():
         used_node_index.append(keywords_list.index(current_keyword))
 
         for i in range(len(keywords_list)):
@@ -88,7 +84,8 @@ def to_gephi_edge_csv(input_dic,node_size_dic):
             temp = (current_keyword, keywords_list[i], current_count_list[i])
             if (current_count_list[i] == 0):
                 continue
-            current_weights = (current_count_list[i] / total_coOccurence_max) * 100
+            current_weights = jaccard_coefficient(current_keyword,keywords_list[i],input_dic)
+            # current_weights = (current_count_list[i] / total_coOccurence_max) * 100
             outfile.write(str(node_id_dic[current_keyword]))
             outfile.write(',')
             outfile.write(str(node_id_dic[keywords_list[i]]))
@@ -101,10 +98,13 @@ def to_gephi_edge_csv(input_dic,node_size_dic):
     outfile.close()
     print(modularity_list)
 
+
+
 if __name__=='__main__':
 
     # # 1st_step
-    result_dic = get_result_dic(weibofilefolder)
+    # result_dic = get_result_dic(weibofilefolder)
+    #未过滤分词结果<5
     result_dic = {'together': {
         '健康': [0, 46580, 15803, 484402, 26795, 25229, 223910, 26597, 623, 660, 16928, 1717, 4965, 254, 342, 236, 613,45],
         '事业有成': [46580, 0, 51, 10340, 9937, 206, 10539, 237, 1, 4368, 4, 4, 70, 2, 5, 2, 0, 0],
@@ -128,9 +128,9 @@ if __name__=='__main__':
                   '家庭幸福': 1439982, '好工作': 744275, '平等机会': 85104, '白手起家': 185337, '成为富人': 47384, '个体自由': 237746,
                   '安享晚年': 49850, '收入足够': 20252, '个人努力': 165929, '祖国强大': 21485, '中国经济持续发展': 4663, '父辈更好': 1385}}
 
-    #from keyword_percent
+    #from keyword_percent 出现的次数过滤掉分词结果<5
     node_size_dic = {'健康': 47938478, '事业有成': 299764, '发展机会': 436578, '生活幸福': 8873933, '有房': 1199480, '出名': 1500432, '家庭幸福': 1390455,
      '好工作': 716247, '平等机会': 75271, '白手起家': 178345, '成为富人': 45624, '个体自由': 231813, '安享晚年': 46384, '收入足够': 19043,
      '个人努力': 162647, '祖国强大': 19264, '中国经济持续发展': 4373, '父辈更好': 1314}
 
-    # to_gephi_edge_csv(result_dic,node_size_dic)
+    to_gephi_edge_csv(result_dic,result_dic['seperate'])
