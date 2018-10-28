@@ -434,6 +434,7 @@ def keyword_location_lda(mongo_server = '127.0.0.1',usingMongo = 0):
     keyword_folder = 'D:/chinadream/keyword_location/'
     folderlist = os.listdir(keyword_folder)
     for current_keyword in folderlist:
+        print(current_keyword)
         current_keyword_cut_list = current_keyword.split(',')
         current_keyword_banned_list = []
 
@@ -451,6 +452,7 @@ def keyword_location_lda(mongo_server = '127.0.0.1',usingMongo = 0):
         corpus_city = {}
         count = 0
         for current_city_file in current_city_file_list:
+            corpus_numbers = 0
             origin_text = []
             open_keyword_file = open(current_keyword_folder + current_city_file,'r',encoding='utf-8')
             for temp_line in open_keyword_file:
@@ -466,11 +468,18 @@ def keyword_location_lda(mongo_server = '127.0.0.1',usingMongo = 0):
                         weibo_cut_list.append(items)
                 if(len(weibo_cut_list) < 5):
                     continue
+                corpus_numbers += 1
+                if(corpus_numbers %2 ==0):
+                    continue
                 for current_cut in weibo_cut_list:
                     origin_text.append(current_cut)
+                if(corpus_numbers >= 1000000):
+                    break
+            print(len(origin_text))
+            print(current_city_file)
             corpus_city[current_city_file] = count
             corpus_text.append(origin_text)
-            count+=0
+            count+=1
 
         frequency = defaultdict(int)
         for city_file in corpus_text:
