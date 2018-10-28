@@ -475,6 +475,7 @@ def keyword_location_lda(mongo_server = '127.0.0.1',usingMongo = 0):
                     origin_text.append(current_cut)
                 if(corpus_numbers >= 1000000):
                     break
+            open_keyword_file.close()
             print(len(origin_text))
             print(current_city_file)
             corpus_city[current_city_file] = count
