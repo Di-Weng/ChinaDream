@@ -15,4 +15,8 @@ from gensim.corpora import Dictionary
 import codecs
 
 if __name__=='__main__':
+     #lda
      topic_sta1.keyword_location_lda()
+
+     #输出结果
+     topic_sta1.lda_city_topic()
