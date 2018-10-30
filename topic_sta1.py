@@ -469,11 +469,11 @@ def keyword_location_lda(mongo_server = '127.0.0.1',usingMongo = 0):
                 if(len(weibo_cut_list) < 5):
                     continue
                 corpus_numbers += 1
-                if(corpus_numbers %2 ==0):
+                if(corpus_numbers % 4 ==0):
                     continue
                 for current_cut in weibo_cut_list:
                     origin_text.append(current_cut)
-                if(corpus_numbers >= 1000000):
+                if(corpus_numbers >= 20000):
                     break
             open_keyword_file.close()
             print(len(origin_text))
@@ -492,7 +492,7 @@ def keyword_location_lda(mongo_server = '127.0.0.1',usingMongo = 0):
         word_count_dict = corpora.Dictionary(texts)
         corpus = [word_count_dict.doc2bow(text) for text in texts]
 
-        lda = LdaMulticore(corpus=corpus, id2word=word_count_dict, num_topics=20, workers=7)
+        lda = LdaMulticore(corpus=corpus, id2word=word_count_dict, num_topics=8, workers=7)
         model_file = 'data/keyword_location/model/' + current_keyword + '_lda.model'
 
         lda.save(model_file)
