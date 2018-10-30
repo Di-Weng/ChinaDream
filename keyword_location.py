@@ -18,6 +18,7 @@ import topic_sta1
 from topic_sta1 import topic
 from topic_sta1 import keywords_list
 from numba import jit
+import math
 
 weibofilefolder = 'D:/chinadream/data'
 north_city = ['北京','天津','内蒙古','新疆','河北','甘肃','宁夏','山西','陕西','青海','山东','河南','安徽','辽宁','吉林','黑龙江']
@@ -155,6 +156,7 @@ def stand_output(keyword_map):
         temp_max = 0
         temp_min = 10000000000
         for province, current_value in current_keyword_dic.items():
+            current_value = math.log(current_value)
             if(temp_max < current_value):
                 temp_max = current_value
             if (temp_min > current_value):
@@ -179,8 +181,8 @@ if __name__ == '__main__':
 
 
     # #全省地图
-    # keyword_map = province_map_echarts(keyword_location)
-    # stand_output(keyword_map)
+    keyword_map = province_map_echarts(keyword_location)
+    stand_output(keyword_map)
 
 
     # for keyword, keyword_dic in keyword_map.items():
