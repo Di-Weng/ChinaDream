@@ -430,7 +430,7 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
     keyword_finished = []
     db = conntoMongoKeywordLocation_topic()
     for keyword_result in db['topic'].find():
-        keyword_finished.append(keyword_result)
+        keyword_finished.append(keyword_result['keyword'])
 
     with open('data/stop_word.txt', 'r', encoding='utf-8') as sw_f:
         for item in sw_f:
