@@ -423,10 +423,15 @@ def keyword_coOccurrence(file_path_list):
         print('current collection' + str(current_file) + 'process time: ' + str(e_t - s_t))
 
 #有待组装
-def keyword_location_lda(mongo_server = '127.0.0.1',usingMongo = 0):
+def keyword_location_lda(mongo_server = '127.0.0.1'):
     jieba.load_userdict("data/user_dict.txt")
     stop_word = []
     weibocityfilefolder = 'D:/chinadream/city/'
+    keyword_finished = []
+    db = conntoMongoKeywordLocation_topic()
+    for keyword_result in db['topic'].find():
+        keyword_finished.append(keyword_result)
+
     with open('data/stop_word.txt', 'r', encoding='utf-8') as sw_f:
         for item in sw_f:
             stop_word.append(item.strip())
@@ -434,6 +439,8 @@ def keyword_location_lda(mongo_server = '127.0.0.1',usingMongo = 0):
     keyword_folder = 'D:/chinadream/keyword_location/'
     folderlist = os.listdir(keyword_folder)
     for current_keyword in folderlist:
+        if(current_keyword in keyword_finished):
+            continue
         print(current_keyword)
         current_keyword_cut_list = current_keyword.split(',')
         current_keyword_banned_list = []
@@ -492,7 +499,7 @@ def keyword_location_lda(mongo_server = '127.0.0.1',usingMongo = 0):
         word_count_dict = corpora.Dictionary(texts)
         corpus = [word_count_dict.doc2bow(text) for text in texts]
 
-        lda = LdaMulticore(corpus=corpus, id2word=word_count_dict, num_topics=8, workers=7)
+        lda = LdaModel(corpus=corpus, id2word=word_count_dict, num_topics=8)
         model_file = 'data/keyword_location/model/' + current_keyword + '_lda.model'
 
         lda.save(model_file)
