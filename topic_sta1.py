@@ -22,6 +22,7 @@ from gensim.test.utils import datapath
 from gensim.models import LdaMulticore
 import codecs
 from collections import defaultdict
+from operator import itemgetter
 
 # the uppest path of weibo data document
 weibofilefolder = 'D:/chinadream/data'
@@ -480,7 +481,7 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
                     continue
                 for current_cut in weibo_cut_list:
                     origin_text.append(current_cut)
-                if(corpus_numbers >= 20000):
+                if(corpus_numbers >= 50000):
                     break
             open_keyword_file.close()
             print(len(origin_text))
@@ -499,7 +500,7 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
         word_count_dict = corpora.Dictionary(texts)
         corpus = [word_count_dict.doc2bow(text) for text in texts]
 
-        lda = LdaModel(corpus=corpus, id2word=word_count_dict, num_topics=8)
+        lda = LdaModel(corpus=corpus, id2word=word_count_dict, num_topics=16)
         model_file = 'data/keyword_location/model/' + current_keyword + '_lda.model'
 
         lda.save(model_file)
@@ -519,7 +520,7 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
         current_collection = db['topic']
         data_toinsert = {
             'keyword': current_keyword,
-            'all_topic': str(lda.print_topics(-1))
+            'all_topic': str(lda.show_topics(num_topics=16))
         }
         result = current_collection.insert_one(data_toinsert)
             #write to file
@@ -530,6 +531,43 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
             # output_file.write('\n')
     return
 
+def lda_city_topic():
+    db1 = conntoMongoKeywordLocation()
+    db2 = conntoMongoKeywordLocation_topic()
+    topic_distrib_col = db2['topic']
+    mongokeywordlist = db1.collection_names()
+    for current_keyword in mongokeywordlist:
+        out_file = 'data/keyword_location/doc_topic/' + current_keyword
+        #获取分布
+        condition = {'keyword': current_keyword}
+        topic_doc = topic_distrib_col.find_one(condition)
+        all_topic = eval(topic_doc['all_topic'])
+        f = open(out_file,'a+',encoding='utf-8')
+        f.write(current_keyword)
+        f.write('\n')
+        for topic_tuple in all_topic:
+            topic_serialnum = topic_tuple[0]
+            current_topic_dis = topic_tuple[1]
+            f.write(str(topic_serialnum))
+            f.write('\t')
+            f.write(str(current_topic_dis))
+            f.write('\n')
+
+        #获取城市话题
+        result_city_iter = db1[current_keyword].find()
+        for result_city in result_city_iter:
+            city = result_city['city'].split('.')[0]
+            result_tuple_list = eval(result_city['topic_distribution'])
+            city_topic_tuple = max(result_tuple_list,key=lambda item:item[1])
+            topic_serial = city_topic_tuple[0]
+            topic_proxi = city_topic_tuple[1]
+            f.write(city)
+            f.write('\t')
+            f.write(str(topic_serial))
+            f.write('\t')
+            f.write(str(topic_proxi))
+            f.write('\n')
+        f.close()
 # weibofilefolder = 'D:/chinadream/data'
 # 按时间-中国梦维度-市（区）存储文件
 # 按中国梦维度-市(区)存储文件
@@ -586,6 +624,66 @@ def collect_city_file(file_path_list):
         print('current_file:' + current_file)
         print('current file process time: ' + str(e_t - s_t))
 
+def calc_city_doc():
+    stop_word = []
+    with open('data/stop_word.txt', 'r', encoding='utf-8') as sw_f:
+        for item in sw_f:
+            stop_word.append(item.strip())
+
+    keyword_folder = 'D:/chinadream/keyword_location/'
+    folderlist = os.listdir(keyword_folder)
+    for current_keyword in folderlist:
+        keyword_out_dic = {}
+        current_keyword_folder = keyword_folder + current_keyword + '/'
+        current_city_file_list = os.listdir(current_keyword_folder)
+
+        keyword_doc = 0
+        keyword_city = 0
+        current_keyword_cut_list = current_keyword.split(',')
+        current_keyword_banned_list = []
+
+        # 全切
+        for temp1 in current_keyword_cut_list:
+            cut_list = jieba.cut(temp1)
+            for temp2 in cut_list:
+                current_keyword_banned_list.append(temp2)
+
+        for current_city_file in current_city_file_list:
+            keyword_out_dic[current_city_file] = 0
+            keyword_city += 1
+
+            open_keyword_file = open(current_keyword_folder + current_city_file, 'r', encoding='utf-8')
+
+            for temp_line in open_keyword_file:
+                weibo_origin = filer.filer(temp_line).replace('/', '')
+                if (len(weibo_origin) == 0):
+                    continue
+                weibo_cut = list(jieba.cut(weibo_origin))
+                weibo_cut_list = []
+                for items in weibo_cut:
+                    if (items not in stop_word and len(items.strip()) > 0):
+                        if (items in current_keyword_banned_list):
+                            continue
+                        weibo_cut_list.append(items)
+                if (len(weibo_cut_list) < 5):
+                    continue
+                keyword_doc += 1
+                keyword_out_dic[current_city_file] += 1
+        out_file = 'data/keyword_location/doc_sta/' + current_keyword
+        with open(out_file,'a+',encoding = 'utf-8') as f:
+            f.write(current_keyword)
+            f.write('\n')
+            f.write('城市数:\t')
+            f.write(str(keyword_city))
+            f.write('\n')
+            f.write('语料微博条数：\t')
+            f.write(str(keyword_doc))
+            f.write('\n')
+            for current_city, city_weibocount in keyword_out_dic.items():
+                f.write(current_city.split('.')[0])
+                f.write('\t')
+                f.write(str(city_weibocount))
+                f.write('\n')
 
 
 
