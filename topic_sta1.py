@@ -505,16 +505,15 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
         for city_file in corpus_text:
             for token in city_file:
                 frequency[token] += 1
-        texts = [[token for token in text if frequency[token] > 1]
+        texts = [[token for token in text if frequency[token] > 5]
                  for text in corpus_text]
 
         word_count_dict = corpora.Dictionary(texts)
         corpus = [word_count_dict.doc2bow(text) for text in texts]
         tfidf = TfidfModel(corpus)
-        del corpus
-        gc.collect()
         corpus_tfidf = tfidf[corpus]
         del tfidf
+        del corpus
         gc.collect()
         lda = LdaModel(corpus=corpus_tfidf, id2word=word_count_dict, num_topics=8)
         model_file = 'data/keyword_location/model/' + current_keyword + '_lda.model'
