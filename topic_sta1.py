@@ -544,7 +544,7 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
         for city_file in corpus_text:
             for token in city_file:
                 frequency[token] += 1
-        texts = [[token for token in text if frequency[token] > 5]
+        texts = [[token for token in text if frequency[token] > 3]
                  for text in corpus_text]
 
         word_count_dict = corpora.Dictionary(texts)
