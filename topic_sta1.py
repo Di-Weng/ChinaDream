@@ -17,11 +17,12 @@ import pymongo
 import pickle
 import jieba
 from gensim import corpora
-from gensim.models import LdaModel
+from gensim.models import LdaModel, TfidfModel
 from gensim.test.utils import datapath
 from gensim.models import LdaMulticore
 import codecs
 from collections import defaultdict
+import gc
 
 # the uppest path of weibo data document
 weibofilefolder = 'D:/chinadream/data'
@@ -509,8 +510,13 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
 
         word_count_dict = corpora.Dictionary(texts)
         corpus = [word_count_dict.doc2bow(text) for text in texts]
-
-        lda = LdaModel(corpus=corpus, id2word=word_count_dict, num_topics=8)
+        tfidf = TfidfModel(corpus)
+        del corpus
+        gc.collect()
+        corpus_tfidf = tfidf[corpus]
+        del tfidf
+        gc.collect()
+        lda = LdaModel(corpus=corpus_tfidf, id2word=word_count_dict, num_topics=8)
         model_file = 'data/keyword_location/model/' + current_keyword + '_lda.model'
 
         lda.save(model_file)
