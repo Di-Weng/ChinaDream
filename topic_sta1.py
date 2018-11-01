@@ -473,6 +473,7 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
         corpus_city = {}
         count = 0
         for current_city_file in current_city_file_list:
+            print(current_city_file)
             corpus_numbers = 0
             origin_text = []
             open_keyword_file_path = current_keyword_folder + current_city_file
@@ -503,39 +504,36 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
                         origin_text.append(current_cut)
             else:
                 used_set = set()
-                ban_set = set()
+                linenumber_list = [i for i in range(temp_line_num)]
 
-                while(len(used_set) < max_weiboDoc):
-                    a = randint(0,temp_line_num-1)
-                    if((a not in used_set) and (a not in ban_set)):
-                        temp_line = open_keyword_file[a]
+                while(len(used_set) < max_weiboDoc or len(linenumber_list) == 0):
+                    a = randint(0,len(linenumber_list)-1)
+                    linenumber_list.pop(a)
+                    temp_line = open_keyword_file[a]
+                    current_topic = getTopic(temp_line)
+                    if (current_topic == '娱乐'):
+                        continue
 
-                        current_topic = getTopic(temp_line)
-                        if (current_topic == '娱乐'):
-                            ban_set.add(a)
-                            continue
-
-                        weibo_origin = filer.filer(temp_line).replace('/', '')
-                        if (len(weibo_origin) == 0):
-                            ban_set.add(a)
-                            continue
-                        weibo_cut = list(jieba.cut(weibo_origin))
-                        weibo_cut_list = []
-                        for items in weibo_cut:
-                            if (items not in stop_word and len(items.strip()) > 0):
-                                if (items in current_keyword_banned_list):
-                                    continue
-                                weibo_cut_list.append(items)
-                        if (len(weibo_cut_list) < 5):
-                            ban_set.add(a)
-                            continue
-                        for current_cut in weibo_cut_list:
-                            origin_text.append(current_cut)
-                        used_set.add(a)
-
+                    weibo_origin = filer.filer(temp_line).replace('/', '')
+                    if (len(weibo_origin) == 0):
+                        continue
+                    weibo_cut = list(jieba.cut(weibo_origin))
+                    weibo_cut_list = []
+                    for items in weibo_cut:
+                        if (items not in stop_word and len(items.strip()) > 0):
+                            if (items in current_keyword_banned_list):
+                                continue
+                            weibo_cut_list.append(items)
+                    if (len(weibo_cut_list) < 5):
+                        continue
+                    for current_cut in weibo_cut_list:
+                        origin_text.append(current_cut)
+                    used_set.add(a)
+            if(len(origin_text) == 0):
+                continue
             linecache.clearcache()
             print(len(origin_text))
-            print(current_city_file)
+
             corpus_city[current_city_file] = count
             corpus_text.append(origin_text)
             count+=1
@@ -549,10 +547,12 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
 
         word_count_dict = corpora.Dictionary(texts)
         corpus = [word_count_dict.doc2bow(text) for text in texts]
+        print('计算tfidf')
         tfidf = TfidfModel(corpus)
         corpus_tfidf = tfidf[corpus]
         del tfidf
         gc.collect()
+        print('开始LDA模型构建')
         lda = LdaModel(corpus=corpus_tfidf, id2word=word_count_dict, num_topics=8)
         model_file = 'data/keyword_location/model/' + current_keyword + '_lda.model'
 
