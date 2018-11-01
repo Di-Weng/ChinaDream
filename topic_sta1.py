@@ -506,9 +506,14 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
                 used_set = set()
                 linenumber_list = [i for i in range(temp_line_num)]
 
-                while(len(used_set) < max_weiboDoc or len(linenumber_list) == 0):
-                    a = randint(0,len(linenumber_list)-1)
-                    linenumber_list.pop(a)
+                while(len(used_set) < max_weiboDoc or len(linenumber_list) > 0):
+                    if(len(linenumber_list) == 0):
+                        break
+                    elif(len(linenumber_list) == 1):
+                        a = 0
+                    else:
+                        a = randint(0,len(linenumber_list)-1)
+                    del linenumber_list[a]
                     temp_line = open_keyword_file[a]
                     current_topic = getTopic(temp_line)
                     if (current_topic == '娱乐'):
