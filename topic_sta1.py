@@ -483,6 +483,10 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
             if(temp_line_num < max_weiboDoc):
                 for temp_line_lineNum in range(temp_line_num):
                     temp_line = open_keyword_file[temp_line_lineNum]
+                    current_topic = getTopic(temp_line)
+                    if(current_topic == '娱乐'):
+                        continue
+
                     weibo_origin = filer.filer(temp_line).replace('/','')
                     if (len(weibo_origin) == 0):
                         continue
@@ -505,6 +509,11 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
                     a = randint(0,temp_line_num-1)
                     if((a not in used_set) and (a not in ban_set)):
                         temp_line = open_keyword_file[a]
+
+                        current_topic = getTopic(temp_line)
+                        if (current_topic == '娱乐'):
+                            ban_set.add(a)
+                            continue
 
                         weibo_origin = filer.filer(temp_line).replace('/', '')
                         if (len(weibo_origin) == 0):
