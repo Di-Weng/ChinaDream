@@ -513,7 +513,6 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
         tfidf = TfidfModel(corpus)
         corpus_tfidf = tfidf[corpus]
         del tfidf
-        del corpus
         gc.collect()
         lda = LdaModel(corpus=corpus_tfidf, id2word=word_count_dict, num_topics=8)
         model_file = 'data/keyword_location/model/' + current_keyword + '_lda.model'
