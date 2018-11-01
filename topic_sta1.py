@@ -23,6 +23,8 @@ from gensim.models import LdaMulticore
 import codecs
 from collections import defaultdict
 import gc
+from random import randint
+import linecache
 
 # the uppest path of weibo data document
 weibofilefolder = 'D:/chinadream/data'
@@ -473,28 +475,56 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
         for current_city_file in current_city_file_list:
             corpus_numbers = 0
             origin_text = []
-            open_keyword_file = open(current_keyword_folder + current_city_file,'r',encoding='utf-8')
-            for temp_line in open_keyword_file:
-                weibo_origin = filer.filer(temp_line).replace('/','')
-                if (len(weibo_origin) == 0):
-                    continue
-                weibo_cut = list(jieba.cut(weibo_origin))
-                weibo_cut_list = []
-                for items in weibo_cut:
-                    if (items not in stop_word and len(items.strip()) > 0):
-                        if(items in current_keyword_banned_list):
+            open_keyword_file_path = current_keyword_folder + current_city_file
+            open_keyword_file = linecache.getlines(open_keyword_file_path)
+            # open_keyword_file = open(open_keyword_file_path,'r',encoding='utf-8')
+            temp_line_num = len(open_keyword_file)
+            max_weiboDoc = 20000
+            if(temp_line_num < max_weiboDoc):
+                for temp_line_lineNum in range(temp_line_num):
+                    temp_line = open_keyword_file[temp_line_lineNum]
+                    weibo_origin = filer.filer(temp_line).replace('/','')
+                    if (len(weibo_origin) == 0):
+                        continue
+                    weibo_cut = list(jieba.cut(weibo_origin))
+                    weibo_cut_list = []
+                    for items in weibo_cut:
+                        if (items not in stop_word and len(items.strip()) > 0):
+                            if(items in current_keyword_banned_list):
+                                continue
+                            weibo_cut_list.append(items)
+                    if(len(weibo_cut_list) < 5):
+                        continue
+                    for current_cut in weibo_cut_list:
+                        origin_text.append(current_cut)
+            else:
+                used_set = set()
+                ban_set = set()
+
+                while(len(used_set) < max_weiboDoc):
+                    a = randint(0,temp_line_num-1)
+                    if((a not in used_set) and (a not in ban_set)):
+                        temp_line = open_keyword_file[a]
+
+                        weibo_origin = filer.filer(temp_line).replace('/', '')
+                        if (len(weibo_origin) == 0):
+                            ban_set.add(a)
                             continue
-                        weibo_cut_list.append(items)
-                if(len(weibo_cut_list) < 5):
-                    continue
-                corpus_numbers += 1
-                if(corpus_numbers % 4 ==0):
-                    continue
-                for current_cut in weibo_cut_list:
-                    origin_text.append(current_cut)
-                if(corpus_numbers >= 20000):
-                    break
-            open_keyword_file.close()
+                        weibo_cut = list(jieba.cut(weibo_origin))
+                        weibo_cut_list = []
+                        for items in weibo_cut:
+                            if (items not in stop_word and len(items.strip()) > 0):
+                                if (items in current_keyword_banned_list):
+                                    continue
+                                weibo_cut_list.append(items)
+                        if (len(weibo_cut_list) < 5):
+                            ban_set.add(a)
+                            continue
+                        for current_cut in weibo_cut_list:
+                            origin_text.append(current_cut)
+                        used_set.add(a)
+
+            linecache.clearcache()
             print(len(origin_text))
             print(current_city_file)
             corpus_city[current_city_file] = count
@@ -604,6 +634,49 @@ def collect_city_file(file_path_list):
 def statistic_keywordLocaiton_number():
     pass
 
+
+def keyword_percent(file_paht_list):
+    dismiss_count = 0
+    output_dic_gt5 = {}
+    output_dic_all = {}
+
+    for current_file in file_paht_list:
+        with open(current_file, 'r', encoding='utf-8') as f:
+            s_t = time()
+            for line in f:
+                line_section = line.split('\t')
+
+                current_text = getText(line_section)
+                keyword_list = getKeywordList(line_section)
+                # dismiss weibo which is too short(<5)
+                current_text = filer.filer(current_text)
+                word_list = [word for word in jieba.cut(current_text)]
+
+                # 统计所有
+                for keyword in keyword_list:
+                    keyword = keyword.replace(',', '')
+                    if (keyword not in output_dic_all.keys()):
+                        print(keyword)
+                        output_dic_all[keyword] = 0
+                    output_dic_all[keyword] += 1
+
+                if (len(word_list) < 5):
+                    dismiss_count += 1
+                    continue
+
+                for keyword in keyword_list:
+                    keyword = keyword.replace(',', '')
+                    if (keyword not in output_dic_gt5.keys()):
+                        print(keyword)
+                        output_dic_gt5[keyword] = 0
+                    output_dic_gt5[keyword] += 1
+            e_t = time()
+            print('all')
+            print(output_dic_all)
+            print('greater than 5')
+            print(output_dic_gt5)
+            print('dismiss count: ' + str(dismiss_count))
+            print('current collection process time: ' + str(e_t - s_t))
 
 
 
