@@ -480,7 +480,7 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
             open_keyword_file = linecache.getlines(open_keyword_file_path)
             # open_keyword_file = open(open_keyword_file_path,'r',encoding='utf-8')
             temp_line_num = len(open_keyword_file)
-            max_weiboDoc = 20000
+            max_weiboDoc = 5000
             if(temp_line_num < max_weiboDoc):
                 for temp_line_lineNum in range(temp_line_num):
                     temp_line = open_keyword_file[temp_line_lineNum]
@@ -542,6 +542,9 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
             corpus_city[current_city_file] = count
             corpus_text.append(origin_text)
             count+=1
+
+        del origin_text
+        gc.collect()
 
         frequency = defaultdict(int)
         for city_file in corpus_text:
