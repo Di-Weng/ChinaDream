@@ -17,6 +17,6 @@
 '''
 
 import topic_sta1
-weibofilefolder = 'D:/chinadream/data'
+weibofilefolder = '/Volumes/新加卷/chinadream/data'
 file_path_list = topic_sta1.getAllFile(weibofilefolder)
 topic_sta1.keyword_percent(file_path_list)

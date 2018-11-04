@@ -14,7 +14,7 @@
 
 '''
 
-weibofilefolder = 'D:/chinadream/data'
+weibofilefolder = '/Volumes/新加卷/chinadream/data'
 
 
 import topic_sta1

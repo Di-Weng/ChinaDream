@@ -14,7 +14,7 @@ from topic_sta1 import keywords_list
 import numpy as np
 from numba import jit
 import math
-weibofilefolder = 'D:/chinadream/data'
+weibofilefolder = '/Volumes/新加卷/chinadream/data'
 
 @jit
 def list_sum(listA):

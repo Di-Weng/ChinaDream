@@ -27,7 +27,7 @@ from random import randint
 import linecache
 
 # the uppest path of weibo data document
-weibofilefolder = 'D:/chinadream/data'
+weibofilefolder = '/Volumes/新加卷/chinadream/data'
 north_city = ['北京','天津','内蒙古','新疆','河北','甘肃','宁夏','山西','陕西','青海','山东','河南','安徽','辽宁','吉林','黑龙江']
 south_city = ['江苏','浙江','上海','湖北','湖南','四川','重庆','贵州','云南','广西','江西','福建','广东','海南','西藏','台湾','香港','澳门']
 # return [filepath]
@@ -440,7 +440,7 @@ def keyword_coOccurrence(file_path_list):
 def keyword_location_lda(mongo_server = '127.0.0.1'):
     jieba.load_userdict("data/user_dict.txt")
     stop_word = []
-    weibocityfilefolder = 'D:/chinadream/city/'
+    weibocityfilefolder = '/Volumes/新加卷/chinadream/city/'
     keyword_finished = []
     db = conntoMongoKeywordLocation_topic()
     for keyword_result in db['topic'].find():
@@ -450,7 +450,7 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
         for item in sw_f:
             stop_word.append(item.strip())
 
-    keyword_folder = 'D:/chinadream/keyword_location/'
+    keyword_folder = '/Volumes/新加卷/chinadream/keyword_location/'
     folderlist = os.listdir(keyword_folder)
     for current_keyword in folderlist:
         if(current_keyword in keyword_finished):
@@ -592,13 +592,13 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
             # output_file.write('\n')
     return
 
-# weibofilefolder = 'D:/chinadream/data'
+# weibofilefolder = '/Volumes/新加卷/chinadream/data'
 # 按时间-中国梦维度-市（区）存储文件
 # 按中国梦维度-市(区)存储文件
 def collect_city_file(file_path_list):
     ignore_region = ['其他','海外']
-    output_file_1 = 'D:/chinadream/keyword_location/'
-    output_file_2 = 'D:/chinadream/time_keyword_location/'
+    output_file_1 = '/Volumes/新加卷/chinadream/keyword_location/'
+    output_file_2 = '/Volumes/新加卷/chinadream/time_keyword_location/'
     for current_file in file_path_list:
         print(current_file)
         with open(current_file, 'r', encoding='utf-8') as f:

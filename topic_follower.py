@@ -19,7 +19,7 @@ import topic_sta1
 import pickle
 from topic_sta1 import topic
 from numba import jit
-weibofilefolder = 'D:/chinadream/data'
+weibofilefolder = '/Volumes/新加卷/chinadream/data'
 
 
 
