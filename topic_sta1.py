@@ -72,6 +72,16 @@ def getLocation(line_section):
     else:
         print('type error')
 
+def getMood(line_section):
+    if(type(line_section) == list):
+        temp_dic_str = line_section[-1].strip()
+        temp_dic = json.loads(temp_dic_str)
+        return temp_dic['mood']
+    elif(type(line_section) == dict):
+        return(line_section['mood'])
+    else:
+        print('type error')
+
 def getFollowers(line_section):
     if(type(line_section) == list):
         temp_dic_str = line_section[-1].strip()
@@ -729,41 +739,77 @@ def keyword_time(file_paht_list):
             e_t = time()
             print('current file process time: ' + str(e_t - s_t))
             print(output_dic)
-        #     for line in f:
-            #     line_section = line.split('\t')
-            #
-            #
-            #     # dismiss weibo which is too short(<5)
-            #     current_text = filer.filer(current_text)
-            #     word_list = [word for word in jieba.cut(current_text)]
-            #
-            #     # 统计所有
-            #     for keyword in keyword_list:
-            #         keyword = keyword.replace(',', '')
-            #         if (keyword not in output_dic_all.keys()):
-            #             print(keyword)
-            #             output_dic_all[keyword] = 0
-            #         output_dic_all[keyword] += 1
-            #
-            #     if (len(word_list) < 5):
-            #         dismiss_count += 1
-            #         continue
-            #
-            #     for keyword in keyword_list:
-            #         keyword = keyword.replace(',', '')
-            #         if (keyword not in output_dic_gt5.keys()):
-            #             print(keyword)
-            #             output_dic_gt5[keyword] = 0
-            #         output_dic_gt5[keyword] += 1
-            # e_t = time()
-            # print('all')
-            # print(output_dic_all)
-            # print('greater than 5')
-            # print(output_dic_gt5)
-            # print('dismiss count: ' + str(dismiss_count))
-            # print('current collection process time: ' + str(e_t - s_t))
 
+#待组装
+# keywords_list = ['健康','事业有成','发展机会','生活幸福','有房','出名','家庭幸福','好工作','平等机会','白手起家','成为富人','个体自由','安享晚年','收入足够','个人努力','祖国强大','中国经济持续发展','父辈更好']
+def keyword_emotion_time(file_paht_list):
+    output_dic = {}
+    for current_file in file_paht_list:
+        print(current_file)
+        with open(current_file, 'r', encoding='utf-8') as f:
+            current_time = current_file.split('/')[-1].split('.')[0]
+            print(current_time)
+            output_dic[current_time] = {}
+            s_t = time()
+            for line in f:
+                line_section = line.split('\t')
+                current_text = getText(line_section)
+                # dismiss weibo which is too short(<5)
+                current_text = filer.filer(current_text)
+                word_list = [word for word in jieba.cut(current_text)]
+                if (len(word_list) < 5):
+                    continue
 
+                location = getLocation(line_section)
+                current_city = location.split()[0]
+                keyword_list = getKeywordList(line_section)
+
+                # 统计所有
+                for keyword in keyword_list:
+                    keyword = keyword.replace(',', '')
+                    if (keyword not in output_dic[current_time].keys()):
+                        print(keyword)
+                        output_dic[current_time][keyword] = [0 for i in range(len(city_list))]
+                    output_dic[current_time][keyword][city_list.index(current_city)] += 1
+
+            e_t = time()
+            print('current file process time: ' + str(e_t - s_t))
+            print(output_dic)
+
+def keyword_emotion(file_paht_list):
+    output_dic = {}
+    for current_keyword in keywords_list:
+        output_dic[current_keyword] = {}
+    for current_file in file_paht_list:
+        print(current_file)
+        with open(current_file, 'r', encoding='utf-8') as f:
+            current_time = current_file.split('/')[-1].split('.')[0]
+            print(current_time)
+            output_dic[current_time] = {}
+            s_t = time()
+            for line in f:
+                line_section = line.split('\t')
+                current_text = getText(line_section)
+                # dismiss weibo which is too short(<5)
+                current_text = filer.filer(current_text)
+                word_list = [word for word in jieba.cut(current_text)]
+                if (len(word_list) < 5):
+                    continue
+                mood = getMood(line_section)
+                location = getLocation(line_section)
+                keyword_list = getKeywordList(line_section)
+
+                # 统计所有
+                for keyword in keyword_list:
+                    keyword = keyword.replace(',', '')
+                    if (mood not in output_dic[keyword].keys()):
+                        output_dic[keyword][str(mood)] = 0
+                    else:
+                        output_dic[keyword][str(mood)] += 1
+
+            e_t = time()
+            print('current file process time: ' + str(e_t - s_t))
+            print(output_dic)
 
 if __name__ == '__main__':
     # topic_keyword
