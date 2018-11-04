@@ -27,7 +27,7 @@ from random import randint
 import linecache
 
 # the uppest path of weibo data document
-weibofilefolder = '/Volumes/新加卷/chinadream/data'
+weibofilefolder = '/Volumes/chinadream/data'
 north_city = ['北京','天津','内蒙古','新疆','河北','甘肃','宁夏','山西','陕西','青海','山东','河南','安徽','辽宁','吉林','黑龙江']
 south_city = ['江苏','浙江','上海','湖北','湖南','四川','重庆','贵州','云南','广西','江西','福建','广东','海南','西藏','台湾','香港','澳门']
 # return [filepath]
@@ -319,7 +319,6 @@ def topic_percent(file_paht_list):
                 line_section = line.split('\t')
 
                 current_text = getText(line_section)
-
                 # dismiss weibo which is too short(<5)
                 current_text = filer.filer(current_text)
                 word_list = [word for word in jieba.cut(current_text)]
@@ -440,7 +439,7 @@ def keyword_coOccurrence(file_path_list):
 def keyword_location_lda(mongo_server = '127.0.0.1'):
     jieba.load_userdict("data/user_dict.txt")
     stop_word = []
-    weibocityfilefolder = '/Volumes/新加卷/chinadream/city/'
+    weibocityfilefolder = '/Volumes/chinadream/city/'
     keyword_finished = []
     db = conntoMongoKeywordLocation_topic()
     for keyword_result in db['topic'].find():
@@ -450,7 +449,7 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
         for item in sw_f:
             stop_word.append(item.strip())
 
-    keyword_folder = '/Volumes/新加卷/chinadream/keyword_location/'
+    keyword_folder = '/Volumes/chinadream/keyword_location/'
     folderlist = os.listdir(keyword_folder)
     for current_keyword in folderlist:
         if(current_keyword in keyword_finished):
@@ -592,13 +591,13 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
             # output_file.write('\n')
     return
 
-# weibofilefolder = '/Volumes/新加卷/chinadream/data'
+# weibofilefolder = '/Volumes/chinadream/data'
 # 按时间-中国梦维度-市（区）存储文件
 # 按中国梦维度-市(区)存储文件
 def collect_city_file(file_path_list):
     ignore_region = ['其他','海外']
-    output_file_1 = '/Volumes/新加卷/chinadream/keyword_location/'
-    output_file_2 = '/Volumes/新加卷/chinadream/time_keyword_location/'
+    output_file_1 = '/Volumes/chinadream/keyword_location/'
+    output_file_2 = '/Volumes/chinadream/time_keyword_location/'
     for current_file in file_path_list:
         print(current_file)
         with open(current_file, 'r', encoding='utf-8') as f:
@@ -694,6 +693,75 @@ def keyword_percent(file_paht_list):
             print(output_dic_gt5)
             print('dismiss count: ' + str(dismiss_count))
             print('current collection process time: ' + str(e_t - s_t))
+
+def keyword_time(file_paht_list):
+    city_list = ['北京', '天津', '内蒙古', '新疆', '河北', '甘肃', '宁夏', '山西', '陕西', '青海', '山东', '河南', '安徽', '辽宁', '吉林', '黑龙江', '江苏',
+                 '浙江', '上海', '湖北', '湖南', '四川', '重庆', '贵州', '云南', '广西', '江西', '福建', '广东', '海南', '西藏', '台湾', '香港', '澳门','海外','其他']
+    output_dic = {}
+    for current_file in file_paht_list:
+        print(current_file)
+        with open(current_file, 'r', encoding='utf-8') as f:
+            current_time = current_file.split('/')[-1].split('.')[0]
+            print(current_time)
+            output_dic[current_time] = {}
+            s_t = time()
+            for line in f:
+                line_section = line.split('\t')
+                current_text = getText(line_section)
+                # dismiss weibo which is too short(<5)
+                current_text = filer.filer(current_text)
+                word_list = [word for word in jieba.cut(current_text)]
+                if (len(word_list) < 5):
+                    continue
+
+                location = getLocation(line_section)
+                current_city = location.split()[0]
+                keyword_list = getKeywordList(line_section)
+
+                # 统计所有
+                for keyword in keyword_list:
+                    keyword = keyword.replace(',', '')
+                    if (keyword not in output_dic[current_time].keys()):
+                        print(keyword)
+                        output_dic[current_time][keyword] = [0 for i in range(len(city_list))]
+                    output_dic[current_time][keyword][city_list.index(current_city)] += 1
+
+            e_t = time()
+            print('current file process time: ' + str(e_t - s_t))
+            print(output_dic)
+        #     for line in f:
+            #     line_section = line.split('\t')
+            #
+            #
+            #     # dismiss weibo which is too short(<5)
+            #     current_text = filer.filer(current_text)
+            #     word_list = [word for word in jieba.cut(current_text)]
+            #
+            #     # 统计所有
+            #     for keyword in keyword_list:
+            #         keyword = keyword.replace(',', '')
+            #         if (keyword not in output_dic_all.keys()):
+            #             print(keyword)
+            #             output_dic_all[keyword] = 0
+            #         output_dic_all[keyword] += 1
+            #
+            #     if (len(word_list) < 5):
+            #         dismiss_count += 1
+            #         continue
+            #
+            #     for keyword in keyword_list:
+            #         keyword = keyword.replace(',', '')
+            #         if (keyword not in output_dic_gt5.keys()):
+            #             print(keyword)
+            #             output_dic_gt5[keyword] = 0
+            #         output_dic_gt5[keyword] += 1
+            # e_t = time()
+            # print('all')
+            # print(output_dic_all)
+            # print('greater than 5')
+            # print(output_dic_gt5)
+            # print('dismiss count: ' + str(dismiss_count))
+            # print('current collection process time: ' + str(e_t - s_t))
 
 
 
