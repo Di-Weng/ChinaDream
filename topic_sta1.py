@@ -436,7 +436,7 @@ def keyword_coOccurrence(file_path_list):
         print('dismiss count: ' + str(dismiss_count))
         print('current collection' + str(current_file) + 'process time: ' + str(e_t - s_t))
 
-#有待组装
+# memory error
 def keyword_location_lda(mongo_server = '127.0.0.1'):
     jieba.load_userdict("data/user_dict.txt")
     stop_word = []
