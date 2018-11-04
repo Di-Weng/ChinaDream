@@ -15,7 +15,7 @@
 '''
 
 import topic_sta1
-weibofilefolder = '/Volumes/新加卷/chinadream/data'
+weibofilefolder = '/Volumes/chinadream/data'
 
 
 if __name__ == '__main__':

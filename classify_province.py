@@ -11,7 +11,7 @@
 
 import topic_sta1
 import pymongo
-weibofilefolder = '/Volumes/新加卷/chinadream/data'
+weibofilefolder = '/Volumes/chinadream/data'
 
 if __name__ == '__main__':
     # document to MongoDB
