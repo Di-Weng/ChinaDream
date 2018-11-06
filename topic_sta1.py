@@ -450,10 +450,11 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
     jieba.load_userdict("data/user_dict.txt")
     stop_word = []
     weibocityfilefolder = '/Volumes/chinadream/city/'
-    keyword_finished = []
-    db = conntoMongoKeywordLocation_topic()
-    for keyword_result in db['topic'].find():
-        keyword_finished.append(keyword_result['keyword'])
+
+    # keyword_finished = []
+    # db = conntoMongoKeywordLocation_topic()
+    # for keyword_result in db['topic'].find():
+    #     keyword_finished.append(keyword_result['keyword'])
 
     with open('data/stop_word.txt', 'r', encoding='utf-8') as sw_f:
         for item in sw_f:
@@ -462,21 +463,21 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
     keyword_folder = '/Volumes/chinadream/keyword_location/'
     folderlist = os.listdir(keyword_folder)
     for current_keyword in folderlist:
-        if(current_keyword == '健康'):
-            continue
-        if(current_keyword in keyword_finished):
-            continue
+        # if(current_keyword in keyword_finished):
+        #     continue
         print(current_keyword)
+        current_keyword_folder = keyword_folder + current_keyword + '/'
         current_keyword_cut_list = current_keyword.split(',')
         current_keyword_banned_list = []
-
+        if(current_keyword == '个人努力' or current_keyword == '健康' or (not os.listdir(current_keyword_folder))):
+            continue
         # 全切
         for temp1 in current_keyword_cut_list:
             cut_list = jieba.cut(temp1)
             for temp2 in cut_list:
                 current_keyword_banned_list.append(temp2)
 
-        current_keyword_folder = keyword_folder + current_keyword + '/'
+
         current_city_file_list = os.listdir(current_keyword_folder)
 
         #corpus_text 里的每个list代表一个城市的所有文本
@@ -784,7 +785,6 @@ def keyword_emotion_time(file_paht_list):
                         output_dic[current_time][keyword][str(mood)] = 0
                     else:
                         output_dic[current_time][keyword][str(mood)] += 1
-                print(output_dic)
             e_t = time()
             print('current file process time: ' + str(e_t - s_t))
             print(output_dic)
