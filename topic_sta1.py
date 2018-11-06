@@ -813,6 +813,7 @@ def keyword_emotion(file_paht_list):
             e_t = time()
             print('current file process time: ' + str(e_t - s_t))
             print(output_dic)
+    return output_dic
 
 if __name__ == '__main__':
     # topic_keyword
