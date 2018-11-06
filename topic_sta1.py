@@ -751,13 +751,19 @@ def keyword_time(file_paht_list):
 # keywords_list = ['健康','事业有成','发展机会','生活幸福','有房','出名','家庭幸福','好工作','平等机会','白手起家','成为富人','个体自由','安享晚年','收入足够','个人努力','祖国强大','中国经济持续发展','父辈更好']
 def keyword_emotion_time(file_paht_list):
     output_dic = {}
+
+
     for current_file in file_paht_list:
         print(current_file)
         with open(current_file, 'r', encoding='utf-8') as f:
+            s_t = time()
             current_time = current_file.split('/')[-1].split('.')[0]
             print(current_time)
+            if (current_time in output_dic.keys()):
+                    continue
             output_dic[current_time] = {}
-            s_t = time()
+            for current_keyword in keywords_list:
+                output_dic[current_time][current_keyword] = {}
             for line in f:
                 line_section = line.split('\t')
                 current_text = getText(line_section)
@@ -766,22 +772,21 @@ def keyword_emotion_time(file_paht_list):
                 word_list = [word for word in jieba.cut(current_text)]
                 if (len(word_list) < 5):
                     continue
-
-                location = getLocation(line_section)
-                current_city = location.split()[0]
+                mood = getMood(line_section)
                 keyword_list = getKeywordList(line_section)
 
                 # 统计所有
                 for keyword in keyword_list:
                     keyword = keyword.replace(',', '')
-                    if (keyword not in output_dic[current_time].keys()):
-                        print(keyword)
-                        output_dic[current_time][keyword] = [0 for i in range(len(city_list))]
-                    output_dic[current_time][keyword][city_list.index(current_city)] += 1
-
+                    if (str(mood) not in output_dic[current_time][keyword].keys()):
+                        output_dic[current_time][keyword][str(mood)] = 0
+                    else:
+                        output_dic[current_time][keyword][str(mood)] += 1
+                print(output_dic)
             e_t = time()
             print('current file process time: ' + str(e_t - s_t))
             print(output_dic)
+    return output_dic
 
 def keyword_emotion(file_paht_list):
     output_dic = {}
@@ -813,6 +818,7 @@ def keyword_emotion(file_paht_list):
             e_t = time()
             print('current file process time: ' + str(e_t - s_t))
             print(output_dic)
+    return output_dic
 
 if __name__ == '__main__':
     # topic_keyword
