@@ -462,6 +462,8 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
     keyword_folder = '/Volumes/chinadream/keyword_location/'
     folderlist = os.listdir(keyword_folder)
     for current_keyword in folderlist:
+        if(current_keyword == '健康'):
+            continue
         if(current_keyword in keyword_finished):
             continue
         print(current_keyword)
