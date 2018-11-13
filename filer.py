@@ -14,9 +14,14 @@ def remove_url(tweet):
     url_pattern=r'http://t.cn/\w+'
     tweet=re.sub(url_pattern,'',tweet)
     return tweet
+def remove_xinhao(tweet):
+    tweet=tweet.replace('#','')
+    return tweet
+
 def filer(weibo):
     weibo=cn_t_2_s.zh_simple(weibo)
     weibo=remove_at(weibo)
+    weibo=remove_xinhao(weibo)
     weibo=remove_emoticon(weibo)
     weibo=remove_url(weibo)
     weibo=remove_share(weibo)
