@@ -38,14 +38,14 @@ def extract_word_freq(file_folder_path):
     with open('data/stop_word.txt', 'r', encoding='utf-8') as sw_f:
         for item in sw_f:
             stop_word.append(item.strip())
-
     current_keyword = file_folder_path.split('/')[-1]
+    print(current_keyword)
     current_keyword_cut_list = current_keyword.split(',')
     keyword_ban_list = [ban_word for ban_word in current_keyword_cut_list]
     for ban_word in current_keyword_cut_list:
         ban_word_list = jieba.cut(ban_word)
         for cut_ban_word in ban_word_list:
-            if(cut_ban_word not in keyword_ban_list)
+            if(cut_ban_word not in keyword_ban_list):
                 keyword_ban_list.append(cut_ban_word)
 
     file_name_list = os.listdir(file_folder_path)
@@ -59,6 +59,10 @@ def extract_word_freq(file_folder_path):
             line_count = 0
             for temp_line in file:
                 weibo_origin = filer.filer(temp_line).replace('/', '')
+                for temp in keyword_ban_list:
+                    weibo_origin.replace(temp,'')
+                    weibo_origin.replace(temp, '')
+                    weibo_origin.replace(temp, '')
                 weibo_cut = list(jieba.cut(weibo_origin))
                 for items in weibo_cut:
                     if ((items not in stop_word) and (items not in keyword_ban_list) and len(items.strip()) > 0):
