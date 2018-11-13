@@ -15,13 +15,15 @@
 '''
 
 import topic_sta1
-weibofilefolder = '/Volumes/chinadream/data'
+weibofilefolder = '/Volumes/data/chinadream/data'
 
-
+def store_data():
+    file_path_list = topic_sta1.getAllFile(weibofilefolder)
+    topic_sta1.collect_city_file(file_path_list)
 if __name__ == '__main__':
 
-    # file_path_list = topic_sta1.getAllFile(weibofilefolder)
-    # topic_sta1.collect_city_file(file_path_list)
+    store_data()
+
 
     #统计各keyword 和城市的微博语料数
-    topic_sta1.calc_city_doc()
+    # topic_sta1.calc_city_doc()
