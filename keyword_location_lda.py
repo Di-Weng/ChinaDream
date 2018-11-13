@@ -40,6 +40,14 @@ def extract_word_freq(file_folder_path):
             stop_word.append(item.strip())
 
     current_keyword = file_folder_path.split('/')[-1]
+    current_keyword_cut_list = current_keyword.split(',')
+    keyword_ban_list = [ban_word for ban_word in current_keyword_cut_list]
+    for ban_word in current_keyword_cut_list:
+        ban_word_list = jieba.cut(ban_word)
+        for cut_ban_word in ban_word_list:
+            if(cut_ban_word not in keyword_ban_list)
+                keyword_ban_list.append(cut_ban_word)
+
     file_name_list = os.listdir(file_folder_path)
     temp_list = [file_folder_path + '/' + filename for filename in file_name_list]
     for current_file in temp_list:
@@ -53,7 +61,7 @@ def extract_word_freq(file_folder_path):
                 weibo_origin = filer.filer(temp_line).replace('/', '')
                 weibo_cut = list(jieba.cut(weibo_origin))
                 for items in weibo_cut:
-                    if (items not in stop_word and len(items.strip()) > 0):
+                    if ((items not in stop_word) and (items not in keyword_ban_list) and len(items.strip()) > 0):
                         weibo_cut_list.append(items)
                 line_count += 1
                 if(line_count >= 10000):
