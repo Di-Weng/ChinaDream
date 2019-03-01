@@ -660,6 +660,68 @@ def collect_city_file(file_path_list):
         print('current_file:' + current_file)
         print('current file process time: ' + str(e_t - s_t))
 
+# weibofilefolder = '/Volumes/data/chinadream/data'
+mood_list = ['愤怒','厌恶','高兴','悲伤','恐惧']
+# 按时间-中国梦维度-情感-市（区）存储文件
+# 按中国梦维度-情感-市(区)存储文件
+def collect_emotion_city_file(file_path_list):
+    ignore_region = ['其他','海外']
+    output_file_1 = '/Volumes/data/chinadream/keyword_emotion_location/'
+    output_file_2 = '/Volumes/data/chinadream/time_keyword__emotion_location/'
+    for current_file in file_path_list:
+        print(current_file)
+        with open(current_file, 'r', encoding='utf-8') as f:
+            s_t = time()
+            for line in f:
+                line_section = line.split('\t')
+                current_text = getText(line_section)
+                current_keyword_list = getKeywordList(line_section)
+                current_detailed_location = getLocation(line_section)
+                current_location_list = current_detailed_location.split()
+                current_mood = getMood(line_section)
+                if(len(current_mood) == 0):
+                    continue
+
+                if(len(current_location_list) == 0):
+                    continue
+                province = current_location_list[0]
+
+                if(province in ignore_region):
+                    continue
+                elif(province == '香港' or province == '澳门'):
+                    city = province
+                else:
+                    if(len(current_location_list) < 2):
+                        continue
+                    city = current_location_list[1]
+                for current_keyword in current_keyword_list:
+
+                    current_out_path_1 = output_file_1 + current_mood + '/' + current_keyword
+                    temp1 = current_file.split('/')[-1]
+                    temp2 = temp1.split('.')[0]
+                    current_out_path_2_time = output_file_2 + temp2 + '/' + current_mood
+                    if(not os.path.exists(current_out_path_1)):
+                        os.mkdirs(current_out_path_1)
+                    if(not os.path.exists(current_out_path_2_time)):
+                        os.mkdirs(current_out_path_2_time)
+
+                    keyword_location_file = codecs.open(current_out_path_1 + '/' + city + '.txt','a+',encoding='utf-8')
+                    keyword_location_file.write(current_text)
+                    keyword_location_file.write('\n')
+                    keyword_location_file.close()
+
+                    current_out_path_2_time_keyword = current_out_path_2_time + '/' + current_keyword
+
+                    if(not os.path.exists(current_out_path_2_time_keyword)):
+                        os.mkdir(current_out_path_2_time_keyword)
+                    time_keyword_location_file = codecs.open(current_out_path_2_time_keyword + '/' + city + '.txt', 'a+', encoding='utf-8')
+                    time_keyword_location_file.write(current_text)
+                    time_keyword_location_file.write('\n')
+                    time_keyword_location_file.close()
+            e_t = time()
+        print('current_file:' + current_file)
+        print('current file process time: ' + str(e_t - s_t))
+
 def statistic_keywordLocaiton_number():
     pass
 

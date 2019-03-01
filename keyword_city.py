@@ -20,10 +20,17 @@ weibofilefolder = '/Volumes/data/chinadream/data'
 def store_data():
     file_path_list = topic_sta1.getAllFile(weibofilefolder)
     topic_sta1.collect_city_file(file_path_list)
+
+def store_data_2():
+    file_path_list = topic_sta1.getAllFile(weibofilefolder)
+    topic_sta1.collect_emotion_city_file(file_path_list)
 if __name__ == '__main__':
 
-    store_data()
+    # 不带情感
+    # store_data()
 
+    # 带情感
+    store_data_2()
 
     #统计各keyword 和城市的微博语料数
     # topic_sta1.calc_city_doc()
