@@ -679,10 +679,10 @@ def collect_emotion_city_file(file_path_list):
                 current_detailed_location = getLocation(line_section)
                 current_location_list = current_detailed_location.split()
                 current_mood = getMood(line_section)
-                if(len(current_mood) == 0):
+                if(len(str(current_mood)) == 0):
                     continue
 
-                if(len(current_location_list) == 0):
+                if(len(str(current_location_list)) == 0):
                     continue
                 province = current_location_list[0]
 
@@ -696,14 +696,14 @@ def collect_emotion_city_file(file_path_list):
                     city = current_location_list[1]
                 for current_keyword in current_keyword_list:
 
-                    current_out_path_1 = output_file_1 + current_mood + '/' + current_keyword
+                    current_out_path_1 = output_file_1 + str(current_mood) + '/' + current_keyword
                     temp1 = current_file.split('/')[-1]
                     temp2 = temp1.split('.')[0]
-                    current_out_path_2_time = output_file_2 + temp2 + '/' + current_mood
+                    current_out_path_2_time = output_file_2 + temp2 + '/' + str(current_mood)
                     if(not os.path.exists(current_out_path_1)):
-                        os.mkdirs(current_out_path_1)
+                        os.makedirs(current_out_path_1)
                     if(not os.path.exists(current_out_path_2_time)):
-                        os.mkdirs(current_out_path_2_time)
+                        os.makedirs(current_out_path_2_time)
 
                     keyword_location_file = codecs.open(current_out_path_1 + '/' + city + '.txt','a+',encoding='utf-8')
                     keyword_location_file.write(current_text)
