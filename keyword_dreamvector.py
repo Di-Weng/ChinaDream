@@ -1,225 +1,301 @@
-# _*_ coding:utf-8 _*_
-
-'''
-
-@author: diw
-
-@contact: di.W@hotmail.com
-
-@file: topic_location
-
-@time: 2018/9/29 2:37
-
-@desc:
-
-'''
-
-import topic_sta1
-from topic_sta1 import topic
-from topic_sta1 import keywords_list
-from numba import jit
-import math
-from pandas import DataFrame
+# -*- coding: utf-8 -*-
+"""
+-------------------------------
+   Time    : 2019-04-09 16:19
+   Author  : diw
+   Email   : di.W@hotmail.com
+   File    : keyword_dreamvector.py
+   Desc: 构建中国梦向量
+-------------------------------
+"""
+import warnings
+warnings.filterwarnings("ignore")
+from sklearn.metrics.cluster import calinski_harabaz_score
+import pandas as pd
 import numpy as np
-weibofilefolder = '/Volumes/chinadream/data'
-north_city = ['北京','天津','内蒙古','新疆','河北','甘肃','宁夏','山西','陕西','青海','山东','河南','安徽','辽宁','吉林','黑龙江']
-south_city = ['江苏','浙江','上海','湖北','湖南','四川','重庆','贵州','云南','广西','江西','福建','广东','海南','西藏','台湾','香港','澳门']
-
-@jit
-def list_add(a,b):
-    c = []
-    for i in range(len(a)):
-        c.append(a[i]+b[i])
-    return c
-@jit
-def add_data(output, input_list, keyword):
-    if(keyword not in output.keys()):
-        output[keyword] = input_list
-    else:
-        output[keyword] = list_add(output[keyword],input_list)
-    return output
-
-def get_echartsdata(output):
-    region_list = []
-    series_dic = {}
-    for region in output.keys():
-        region_list.append(region)
-    for keyword_label in keywords_list:
-        current_list = []
-        index = keywords_list.index(keyword_label)
-        for region in region_list:
-            current_region_list = output[region]
-            if (index <= len(current_region_list) - 1):
-                current_list.append(current_region_list[index])
-            else:
-                current_list.append(0)
-        series_dic[keyword_label] = current_list
-
-    for series, series_list in series_dic.items():
-        #累积直方图
-        print(series)
-        print(series_list)
-        print('______________')
-    # xAisx
-    print(region_list)
-    print(output)
-
-@jit
-def calc_sum(temp_list):
-    sum = 0
-    for temp in temp_list:
-        sum += temp
-    return sum
+from pandas.plotting import parallel_coordinates
+import matplotlib.pyplot as plt
+import matplotlib.collections
+from sklearn.cluster import KMeans
+from sklearn import metrics
+from sklearn.manifold import TSNE
+import seaborn as sns
+from sklearn.mixture import GaussianMixture
+from sklearn.decomposition import PCA
+from sklearn.cluster import SpectralClustering
+from mpl_toolkits.mplot3d import Axes3D  #3D图表需要使用“mpl_toolkits”模块
+plt.rcParams['font.family'] = ['Arial Unicode MS'] #用来正常显示中文标签
+plt.rcParams['axes.unicode_minus'] = False #用来正常显示负号
+dreamvector_list = {}
 
 
-def region_calc(output_dic):
-    output = {}
-    for location_str, count_list in output_dic.items():
-        location_list = location_str.split()
-        # 抛弃未知地理位置的数据
-        if(len(location_list) == 0):
-            continue
-
-        city = location_list[0]
-        if(city == '其他'):
-            output = add_data(output, count_list, '其他')
-        elif(city == '海外'):
-            output = add_data(output, count_list, '海外')
-        elif (city in north_city):
-            output = add_data(output, count_list, '北方')
-        elif (city in south_city):
-            output = add_data(output, count_list, '南方')
-        else:
-            print(city)
-
-    percent_output = {}
-
-    #累积数量
-    # print(output)
-    # get_echartsdata(output)
-
-    #pecent_list
-    for region, current_list in output.items():
-        sum = calc_sum(current_list)
-        temp_list = []
-        for i in range(len(current_list)):
-            temp_list.append(float(current_list[i])/sum)
-        percent_output[region] = temp_list
-    return percent_output
-
-#output_dic['省份']=[该省份各个梦占比]
-def province_percent(calc_dic):
+def merge_list(list1,list2):
+    temp_list = []
+    for i in range(len(list1)):
+        temp_list.append(list1[i] + list2[i])
+    return temp_list
+def province_dic(province_list, keyword_location):
+    #output_dic['省份'] = {'keyword_name': [(sorted according to city list)]}
     output_dic = {}
-    province_map = {}
-    for location_detailed,current_list in calc_dic.items():
-        province_list = location_detailed.split()
-        if(len(province_list) == 0):
-            continue
-        province = province_list[0]
-        output_dic[province] = []
-        sum = calc_sum(current_list)
-        temp_list = []
-        for i in range(len(current_list)):
-            temp_list.append(float(current_list[i])/sum)
-        output_dic[province] = temp_list
-    return output_dic
-
-def province_map_echarts(calc_dic):
-    # output_dic[keyword] = [dic[city]]
-    output_dic = {}
-    for current_keyword in keywords_list:
-        temp_dic = {}
-        keyword_index = keywords_list.index(current_keyword)
-        for location_detailed,current_list in calc_dic.items():
-
-            province_list = location_detailed.split()
-            if (len(province_list) == 0):
-                continue
-            province = province_list[0]
-            if(province == '海外' or province == '其他'):
-                continue
-            else:
-                if (province in temp_dic.keys()):
-                    temp_dic[province] += current_list[keyword_index]
+    for current_location,current_location_list in keyword_location.items():
+        for current_province in province_list:
+            if(current_province in current_location):
+                if(current_province not in output_dic.keys()):
+                    output_dic[current_province] = current_location_list
+                    break
                 else:
-                    temp_dic[province] = current_list[keyword_index]
-
-        output_dic[current_keyword] = temp_dic
-    print(output_dic)
+                    temp_list = merge_list(output_dic[current_province],current_location_list)
+                    output_dic[current_province] = temp_list
+                    break
+            else:
+                continue
     return output_dic
 
-#for demo only
-def stand_output(keyword_map):
-    output_map = {}
-    for current_keyword, current_keyword_dic in keyword_map.items():
-        output_map[current_keyword] = {}
-        print()
-        print(current_keyword)
-        flag = 0
-        temp_max = 0
-        temp_min = 10000000000
-        output_map[current_keyword]['data'] = {}
-        for province, current_value in current_keyword_dic.items():
-            current_value = math.log(current_value)
-            if(temp_max < current_value):
-                temp_max = current_value
-            if (temp_min > current_value):
-                temp_min = current_value
-            if(flag > 0):
-                print(',',end='')
-                if(flag%2 == 0):
-                    print()
-            out_str = '{name: \''+  province +'\', value: ' + str(current_value) + '}'
-            print(out_str,end='')
-            flag += 1
-            output_map[current_keyword]['data'][province] = current_value
-        print()
-        print('max: %d; min: %d' % (temp_max,temp_min),end='')
-        output_map[current_keyword]['max'] = temp_max
-        output_map[current_keyword]['min'] = temp_min
-    return output_map
+def keyword_province_emotion(province_list,keyword_location_emotion):
+    #output_dic['keyword_name'] = {'省份': [(sorted according to emotion list)]}
+    output_dic = {}
+    for current_keyword,current_keyword_dic in keyword_location_emotion.items():
+        output_dic[current_keyword] = {}
+        for current_location,current_location_emotion_list in current_keyword_dic.items():
+            for current_province in province_list:
+                if(current_province in current_location):
+                    if(current_province not in output_dic[current_keyword].keys()):
+                        output_dic[current_keyword][current_province] = current_location_emotion_list
+                        break
+                    else:
+                        temp_list = merge_list(output_dic[current_keyword][current_province],current_location_emotion_list)
+                        output_dic[current_keyword][current_province] = temp_list
+                        break
+                else:
+                    continue
+    return output_dic
 
-def line_pie_chart_data(keyword_location):
-    echarts_data = []
-    axis_list = ['dream']
-    for current_dream in keywords_list:
-        axis_list.append(current_dream)
-    echarts_data.append(axis_list)
-    percent_output = province_percent(keyword_location)
-    percent_output_dataframe = DataFrame.from_dict(percent_output, orient='index', columns=keywords_list)
-    zs_percent_output_dataframe = percent_output_dataframe.apply(lambda x: (x - np.min(x)) / (np.max(x) - np.min(x)))
-    print(zs_percent_output_dataframe)
-    for current_index in range(len(zs_percent_output_dataframe)):
-        current_array = zs_percent_output_dataframe.iloc[current_index].values.tolist()
-        current_province = zs_percent_output_dataframe.index[current_index]
+# result_dic['keyword'] = [省1，省2，...,省31,情感0,情感1,情感3,情感4,情感5,]
+def generate_dreamvector(keyword_list, province_list,keyword_province,emotion_list,keyword_location_emotion):
+    result_dic = {}
+    for current_keyword in keyword_list:
+        result_dic[current_keyword] = []
+        # 省份数据
+        for current_province in province_list:
+            result_dic[current_keyword].append(keyword_province[current_province][keyword_list.index(current_keyword)])
+        for current_emotion in emotion_list:
+            result_dic[current_keyword].append(keyword_location_emotion[current_keyword][current_province][emotion_list.index(current_emotion)])
+    return result_dic
 
-        output_list = []
-        output_list.append(current_province)
-        #格式化输出
-        for temp in current_array:
-            output_list.append(round(temp,3))
+def read_keyword_location_emotion(keyword_location_emotion_file):
+    with open(keyword_location_emotion_file) as f:
+        return_dic = eval(f.read())
+    return return_dic
 
-        echarts_data.append(output_list)
-    print(echarts_data)
-    print(len(echarts_data))
+# 将按省提及次数转成百分比 将情感值转为百分比
+def dreamvector_dic_topercent(province_list,emotion_list,dreamvector_dic):
+    dreamvector_percent_dic = {}
+    for current_keyword,current_original_dreamvector in dreamvector_dic.items():
+        dreamvector_percent_dic[current_keyword] = []
 
-if __name__ == '__main__':
-    # 61980837条微博
+        province_num = len(province_list)
+        emotion_num = len(emotion_list)
+        current_province_total = 0
+        current_emotion_total = 0
+        for i in range(province_num):
+            current_province_total += current_original_dreamvector[i]
+        for i in range(emotion_num):
+            current_emotion_total += current_original_dreamvector[i+province_num]
+
+        for i in range(province_num):
+            dreamvector_percent_dic[current_keyword].append(float(current_original_dreamvector[i])/current_province_total)
+        for i in range(emotion_num):
+            dreamvector_percent_dic[current_keyword].append(float(current_original_dreamvector[i+province_num])/current_emotion_total)
+
+    # print(dreamvector_percent_dic)
+    return dreamvector_percent_dic
+
+
+def draw_parallel_coordinate(dreamvector_dataframe,n_cluster):
+    plt.rcParams['figure.figsize'] = (16, 8)  # 设置figure_size尺寸
+    plt.figure()
+    plt.title(str(n_cluster) + '_classes')
+    parallel_coordinates(dreamvector_dataframe,'聚类类别',colormap='hsv')
+    plt.savefig('result/dreamvector/parallel_coordinates' + str(n_cluster) + '_cluster' + '.jpg')
+    plt.show()
+
+def imple_kmeans(dreamvector_dataframe,k):
+    model = KMeans(n_clusters=k, n_jobs=4)  # 分为k类，并发数4
+    model.fit(dreamvector_dataframe)  # 开始聚类
+    # 简单打印结果
+    r1 = pd.Series(model.labels_).value_counts()  # 统计各个类别的数目
+    r2 = pd.DataFrame(model.cluster_centers_)  # 找出聚类中心
+    r = pd.concat([r2, r1], axis=1)  # 横向连接（0是纵向），得到聚类中心对应的类别下的数目
+    r.columns = list(dreamvector_dataframe.columns) + [u'类别数目']  # 重命名表头
+    # print(r)
+
+    # 详细输出原始数据及其类别
+    r = pd.concat([dreamvector_dataframe, pd.Series(model.labels_, index=dreamvector_dataframe.index)], axis=1)  # 详细输出每个样本对应的类别
+    r.columns = list(dreamvector_dataframe.columns) + [u'聚类类别']  # 重命名表头
+
+    ch_index = calinski_harabaz_score(r.iloc[:, 0:-1], r['聚类类别'])
+    print(str(k) + ' class calinski_harabaz_score:' + str(ch_index))
+
+    show_pca(r,2,k)
+    # show_pca(r,3,k)
+    # show_tsne(r,2,k)
+    # show_tsne(r,3,k)
+    # draw_parallel_coordinate(r,k)
+
+def imple_GMM(dreamvector_dataframe,k):
+    model = GaussianMixture(n_components=k)  # 分为k类，并发数4
+    model.fit(dreamvector_dataframe)  # 开始聚类
+    # 简单打印结果
+    labels = model.predict(dreamvector_dataframe)
+    # print(r)
+
+    # 详细输出原始数据及其类别
+    dreamvector_dataframe['聚类类别'] = labels
+    ch_index = calinski_harabaz_score(dreamvector_dataframe.iloc[:,0:-1], labels)
+    print(str(k)+' class calinski_harabaz_score:' +str(ch_index))
+    # show_pca(dreamvector_dataframe,2,k)
+    # show_pca(dreamvector_dataframe,3,k)
+    # show_tsne(dreamvector_dataframe,2,k)
+    show_tsne(dreamvector_dataframe,3,k)
+    # draw_parallel_coordinate(dreamvector_dataframe,k)
+
+def imple_SpectralClustering(dreamvector_dataframe,k):
+    model = SpectralClustering(n_clusters=k)  # 分为k类, 使用默认的高斯核
+    # 简单打印结果
+    labels = model.fit_predict(dreamvector_dataframe)
+    # print(r)
+
+    # 详细输出原始数据及其类别
+    dreamvector_dataframe['聚类类别'] = labels
+    print(labels)
+    ch_index = calinski_harabaz_score(dreamvector_dataframe.iloc[:,0:-1], labels)
+    print(str(k)+' class calinski_harabaz_score:' +str(ch_index))
+    show_pca(dreamvector_dataframe,2,k)
+    show_pca(dreamvector_dataframe,3,k)
+    show_tsne(dreamvector_dataframe,2,k)
+    show_tsne(dreamvector_dataframe,3,k)
+    draw_parallel_coordinate(dreamvector_dataframe,k)
+    return ch_index
+
+def show_pca(dreamvector_dataframe,num_components,n_cluster):
+    pca = PCA(n_components=num_components)
+    newData = pca.fit_transform(dreamvector_dataframe.iloc[:,0:-1])
+    pca_data = pd.DataFrame(newData,index=dreamvector_dataframe._stat_axis.values.tolist())
+
+    pca_data['class'] = dreamvector_dataframe['聚类类别']
+
+    #2d
+    if(num_components==2):
+        # 不同类别用不同颜色和样式绘图
+        plt.rcParams['figure.figsize'] = (8, 6)  # 设置figure_size尺寸
+        # hue指色彩，是散点不同颜色的来源
+        # print(pca_data)
+        plt.title(str(n_cluster) + '_classes')
+        dream_list = dreamvector_dataframe._stat_axis.values.tolist()
+        plt.scatter(pca_data.iloc[:, 0], pca_data.iloc[:, 1], c=pca_data['class'], cmap='hsv', linewidth=0.65)
+        for i in range(len(dreamvector_dataframe['聚类类别'])):
+            plt.annotate(dream_list[i], xy=(pca_data.iloc[i, 0], pca_data.iloc[i, 1]), xytext=(+3,+2),textcoords='offset points')  # 这里xy是需要标记
+        plt.grid(True)
+        plt.savefig('result/dreamvector/pca_2d_'+str(n_cluster)+'cluster'+'.jpg')
+        plt.show()
+    elif(num_components==3):
+        # 3d
+        plt.rcParams['figure.figsize'] = (8, 4)  # 设置figure_size尺寸
+
+        fig = plt.figure('3D scatter plot')
+        ax = fig.add_subplot(111, projection='3d')  # 3d图需要加projection='3d'
+        ax.set_title(str(n_cluster) + '_classes')
+        # print(pca_data)
+        ax.scatter(pca_data.iloc[:, 0], pca_data.iloc[:, 1], pca_data.iloc[:, 2], c=pca_data['class'], cmap='hsv', label = '')
+        plt.savefig('result/dreamvector/pca_3d_'+str(n_cluster)+'cluster'+'.jpg')
+        plt.show()
+
+def show_tsne(dreamvector_dataframe,num_components,n_cluster):
+    tsne = TSNE(n_components=num_components)
+    #:表示所有行
+    # print(dreamvector_dataframe.iloc[:,0:-1])
+
+    tsne.fit(dreamvector_dataframe.iloc[:,0:-1])
+    tsne = pd.DataFrame(tsne.embedding_, index=dreamvector_dataframe.iloc[:,0:-1].index)  # 转换数据格式
+    tsne['class'] = dreamvector_dataframe['聚类类别']
+    # print(tsne)
+
+    #2d
+    if (num_components == 2):
+        # 不同类别用不同颜色和样式绘图
+        plt.rcParams['figure.figsize'] = (8, 6)  # 设置figure_size尺寸
+        # hue指色彩，是散点不同颜色的来源
+        # print(pca_data)
+        plt.title(str(n_cluster) + '_classes')
+        dream_list = dreamvector_dataframe._stat_axis.values.tolist()
+        plt.scatter(tsne.iloc[:, 0], tsne.iloc[:, 1], c=tsne['class'], cmap='hsv', linewidth=0.65)
+        for i in range(len(dreamvector_dataframe['聚类类别'])):
+            plt.annotate(dream_list[i], xy=(tsne.iloc[i, 0], tsne.iloc[i, 1]), xytext=(+3, +2),textcoords='offset points')  # 这里xy是需要标记
+        plt.grid(True)
+        plt.savefig('result/dreamvector/tsne_2d_'+str(n_cluster)+'cluster'+'.jpg')
+        plt.show()
+
+    #3d
+    elif(num_components==3):
+        plt.rcParams['figure.figsize'] = (8, 4)  # 设置figure_size尺寸
+
+        fig = plt.figure('3D scatter plot')
+        ax = fig.add_subplot(111, projection='3d')  # 3d图需要加projection='3d'
+        ax.set_title(str(n_cluster) + '_classes')
+        # print(pca_data)
+        ax.scatter(tsne.iloc[:, 0], tsne.iloc[:, 1], tsne.iloc[:, 2], c=tsne['class'], cmap='hsv')
+        plt.savefig('result/dreamvector/tsne_3d_'+str(n_cluster)+'cluster'+'.jpg')
+        plt.show()
+
+if __name__=='__main__':
+    keyword_location_emotion_file = 'data/city_keyword_emotion/result.txt'
+    keyword_list = ['健康','事业有成','发展机会','生活幸福','有房','出名','家庭幸福','好工作','平等机会','白手起家','成为富人','个体自由','安享晚年','收入足够','个人努力','祖国强大','中国经济持续发展','父辈更好']
+    emotion_list = ['愤怒', '厌恶', '高兴', '悲伤', '恐惧']
+    # keyword_emotion = {'健康': {'3': 10431113, '2': 26792199, '4': 2580746, '0': 4043353, '-1': 1177096, '1': 2913965}, '事业有成': {'2': 182625, '3': 93729, '-1': 2200, '0': 9446, '1': 10420, '4': 1338}, '发展机会': {'1': 35078, '2': 240583, '3': 25407, '4': 102948, '0': 30883, '-1': 1673}, '生活幸福': {'2': 5620765, '3': 2260554, '0': 107260, '1': 210780, '4': 598263, '-1': 76305}, '有房': {'2': 585255, '4': 23221, '0': 239103, '1': 88429, '3': 242650, '-1': 20816}, '出名': {'1': 179269, '0': 265398, '2': 779865, '-1': 45724, '3': 176544, '4': 53626}, '家庭幸福': {'0': 30577, '2': 898104, '1': 46120, '-1': 13928, '3': 334588, '4': 67132}, '好工作': {'2': 361045, '0': 61684, '1': 42414, '3': 224019, '-1': 10240, '4': 16839}, '平等机会': {'0': 6292, '2': 28517, '1': 13302, '3': 7778, '4': 18844, '-1': 532}, '白手起家': {'2': 99983, '1': 14435, '0': 6935, '4': 3537, '3': 51325, '-1': 2124}, '成为富人': {'0': 4720, '2': 27105, '4': 4514, '3': 6976, '1': 2062, '-1': 241}, '个体自由': {'4': 186214, '2': 13971, '-1': 499, '0': 2549, '3': 2767, '1': 25807}, '安享晚年': {'3': 22815, '0': 4039, '2': 13059, '1': 4846, '-1': 1116, '4': 503}, '收入足够': {'1': 2521, '2': 8989, '0': 2120, '3': 2275, '4': 3063, '-1': 69}, '个人努力': {'2': 59979, '3': 89586, '4': 6187, '-1': 794, '0': 1407, '1': 4688}, '祖国强大': {'2': 8334, '3': 5633, '0': 2391, '4': 1845, '1': 508, '-1': 547}, '中国经济持续发展': {'2': 2323, '4': 1208, '0': 470, '1': 308, '3': 47, '-1': 11}, '父辈更好': {'2': 571, '3': 234, '0': 142, '4': 329, '1': 28, '-1': 4}}
     keyword_location = {'广西 河池': [34951, 240, 410, 7301, 796, 1125, 752, 427, 36, 127, 28, 127, 27, 4, 123, 7, 1, 0], '海外 澳大利亚': [139477, 486, 833, 12435, 8290, 5497, 1722, 1730, 161, 336, 147, 263, 99, 46, 249, 60, 4, 7], '上海 黄浦区': [295300, 1473, 4089, 41795, 6505, 9633, 4385, 3692, 584, 1001, 246, 890, 217, 141, 446, 82, 44, 8], '北京 朝阳区': [572916, 3518, 6255, 81276, 13588, 19765, 10366, 9809, 1132, 2572, 493, 1868, 628, 317, 1030, 288, 80, 16], '香港': [143944, 649, 1028, 24400, 3405, 4914, 2478, 2298, 105, 780, 73, 586, 113, 69, 467, 33, 6, 3], '福建 福州': [349113, 1873, 2532, 45366, 7770, 10950, 5684, 5747, 417, 1113, 184, 837, 443, 105, 843, 126, 18, 11], '北京 西城区': [157549, 860, 1717, 23223, 4102, 5511, 2946, 2640, 292, 506, 136, 731, 241, 83, 223, 120, 50, 6], '台湾 台北市': [155328, 881, 1587, 26565, 3159, 5228, 4144, 1979, 191, 481, 99, 425, 112, 45, 1512, 26, 3, 8], '陕西 宝鸡': [63239, 395, 623, 12628, 1246, 1721, 1255, 758, 107, 176, 27, 178, 60, 26, 94, 26, 2, 4], '山东 潍坊': [171208, 1253, 2028, 33911, 3693, 5869, 3546, 2237, 298, 636, 150, 476, 117, 70, 282, 72, 6, 4], '湖南 岳阳': [55835, 434, 477, 11540, 1146, 1772, 1317, 992, 59, 186, 37, 144, 94, 12, 129, 15, 2, 0], '安徽 宣城': [33665, 205, 295, 6904, 1478, 1197, 712, 470, 37, 97, 16, 246, 28, 8, 56, 16, 3, 0], '广西 百色': [36106, 233, 428, 6837, 697, 1157, 719, 470, 42, 99, 24, 109, 32, 21, 69, 3, 0, 0], '上海': [430581, 2254, 4031, 64763, 13047, 14617, 7498, 6007, 676, 1862, 334, 3226, 394, 219, 3409, 179, 62, 5], '河南': [158716, 1769, 1405, 26426, 3128, 4097, 3225, 1902, 221, 621, 86, 522, 189, 47, 1011, 56, 7, 2], '吉林 辽源': [77223, 311, 500, 10425, 956, 1381, 1005, 534, 50, 126, 30, 151, 30, 10, 85, 16, 1, 1], '北京': [778117, 4084, 6362, 120671, 20783, 21292, 13514, 9334, 1557, 3351, 504, 5744, 569, 280, 1427, 349, 98, 18], '海南 其他': [102273, 951, 1181, 25059, 2189, 3352, 2316, 1162, 178, 313, 54, 347, 57, 43, 205, 38, 2, 4], '山西 太原': [174466, 994, 1254, 28274, 3811, 5299, 3137, 2715, 288, 761, 123, 444, 164, 56, 308, 109, 13, 6], '广西 南宁': [251500, 1695, 1913, 30559, 5489, 8055, 4265, 3765, 277, 761, 138, 557, 379, 90, 724, 76, 13, 9], '吉林 长春': [221334, 1285, 1712, 36709, 5082, 6984, 4442, 3294, 305, 904, 125, 835, 227, 63, 411, 85, 12, 6], '广东 惠州': [150596, 896, 1136, 22540, 3425, 4224, 2994, 1884, 123, 608, 62, 664, 202, 51, 424, 42, 2, 5], '广东 深圳': [935347, 5658, 8358, 143264, 27775, 28338, 17221, 13364, 1197, 3888, 718, 7655, 1000, 501, 1399, 323, 88, 25], '重庆 双桥区': [26859, 159, 208, 5324, 533, 531, 601, 288, 38, 47, 15, 132, 5, 7, 525, 3, 1, 0], '澳门 其他': [254931, 1783, 3462, 52939, 5922, 8668, 5284, 2971, 499, 709, 237, 1372, 126, 113, 720, 36, 4, 7], '广东 广州': [1365479, 6989, 10207, 259708, 77454, 42558, 23903, 19309, 1910, 5233, 834, 39344, 1817, 1029, 2787, 488, 105, 40], '辽宁 大连': [318460, 1467, 5317, 97195, 6292, 7909, 13249, 4109, 312, 1040, 119, 702, 236, 104, 404, 141, 673, 4], '山东 泰安': [60007, 373, 433, 10541, 1550, 1939, 1163, 919, 80, 229, 40, 158, 47, 18, 90, 21, 4, 4], '新疆 克拉玛依': [25856, 182, 276, 5758, 527, 886, 595, 339, 29, 71, 17, 90, 25, 6, 36, 8, 1, 0], '浙江 杭州': [689010, 3028, 6573, 120690, 30310, 20954, 11646, 12647, 839, 3266, 328, 10244, 698, 264, 3820, 248, 56, 20], '上海 杨浦区': [90582, 517, 863, 13068, 1995, 3780, 1559, 1724, 165, 282, 68, 366, 91, 56, 118, 55, 19, 8], '江苏 苏州': [417830, 2465, 2495, 63523, 9712, 13547, 7595, 6553, 510, 2112, 255, 1250, 434, 159, 1147, 172, 32, 18], '陕西 渭南': [61832, 345, 519, 11116, 1021, 1571, 1112, 720, 73, 175, 29, 145, 47, 16, 218, 23, 1, 0], '河北 石家庄': [268452, 1259, 2006, 42243, 6894, 7054, 5528, 3894, 318, 917, 157, 644, 275, 74, 456, 105, 19, 10], '北京 通州区': [65576, 398, 494, 10401, 1685, 1809, 1171, 787, 83, 786, 39, 398, 49, 20, 100, 28, 2, 1], '山东 青岛': [303463, 1523, 3141, 46543, 6178, 10308, 5656, 4802, 366, 1246, 185, 832, 388, 105, 558, 177, 24, 8], '广东 东莞': [289156, 2047, 2223, 36912, 4448, 7837, 5336, 3498, 252, 1165, 136, 709, 276, 78, 367, 81, 10, 6], '河南 新乡': [87852, 447, 607, 13179, 1584, 2232, 1492, 1151, 118, 317, 45, 217, 70, 13, 171, 32, 8, 1], '辽宁 沈阳': [341588, 1779, 2031, 48575, 6851, 9141, 5771, 5146, 421, 1324, 197, 843, 326, 102, 500, 156, 21, 4], '河北 邯郸': [88468, 556, 721, 15372, 1914, 2565, 1882, 1191, 91, 483, 46, 247, 84, 44, 197, 42, 10, 2], '湖南 长沙': [377151, 1856, 3033, 56963, 7819, 11668, 8253, 14722, 489, 1225, 226, 1185, 554, 115, 487, 179, 42, 10], '其他': [4808645, 30822, 30241, 849805, 114819, 143278, 97633, 73268, 6006, 17868, 1985, 19544, 4338, 1526, 14872, 2076, 318, 126], '辽宁': [121723, 631, 894, 27676, 2839, 3430, 2828, 1521, 106, 485, 72, 403, 79, 43, 999, 56, 7, 0], '天津 红桥区': [27529, 652, 288, 5622, 605, 889, 537, 414, 36, 81, 15, 99, 18, 14, 51, 13, 0, 0], '山西 吕梁': [40664, 289, 414, 8935, 801, 1178, 820, 465, 65, 160, 19, 117, 26, 17, 128, 15, 0, 1], '四川 成都': [689723, 3372, 4793, 91777, 14275, 23892, 14198, 12013, 1100, 2502, 377, 1955, 963, 276, 1063, 303, 62, 31], '北京 昌平区': [67752, 414, 625, 13119, 1896, 2316, 1287, 1056, 103, 284, 38, 426, 69, 28, 126, 32, 9, 2], '贵州 贵阳': [121518, 822, 1061, 21458, 2648, 4485, 2413, 1992, 184, 505, 65, 347, 137, 46, 298, 53, 11, 4], '北京 东城区': [866491, 4761, 9322, 139938, 19459, 26592, 16079, 11406, 2976, 2798, 594, 2834, 879, 358, 2061, 390, 476, 22], '河北 保定': [100833, 768, 831, 17555, 2298, 3095, 2126, 1571, 147, 510, 80, 282, 106, 23, 251, 50, 5, 7], '河北 唐山': [119516, 698, 798, 18747, 2554, 3192, 2763, 1668, 157, 431, 81, 289, 136, 29, 145, 46, 6, 3], '江苏 无锡': [221325, 1120, 1598, 33709, 5474, 7483, 3832, 3674, 280, 980, 113, 1279, 234, 64, 618, 71, 22, 8], '江西': [103211, 609, 720, 18531, 2299, 2896, 2072, 1443, 110, 307, 45, 399, 90, 29, 772, 47, 3, 0], '重庆 九龙坡区': [36002, 187, 263, 6093, 842, 1427, 590, 691, 45, 119, 20, 161, 42, 5, 64, 17, 1, 4], '北京 怀柔区': [31234, 275, 245, 6749, 880, 864, 620, 388, 39, 71, 12, 307, 19, 16, 47, 8, 1, 0], '黑龙江 黑河': [33198, 244, 347, 7360, 774, 1030, 687, 409, 60, 99, 24, 122, 16, 11, 89, 11, 1, 0], '浙江 台州': [113047, 721, 890, 19531, 2379, 3692, 1988, 1891, 142, 489, 59, 302, 101, 46, 183, 45, 8, 4], '湖北 武汉': [529992, 3239, 4559, 96880, 11419, 18088, 9989, 10974, 907, 2134, 396, 1688, 692, 205, 851, 224, 44, 29], '重庆 沙坪坝区': [73638, 393, 464, 8848, 1114, 2418, 1032, 1224, 93, 203, 36, 190, 77, 18, 136, 37, 5, 5], '山东 东营': [67493, 351, 504, 12683, 1200, 1985, 1415, 1068, 92, 205, 33, 236, 60, 17, 128, 25, 2, 2], '北京 海淀区': [403345, 2221, 6725, 68724, 10279, 16898, 8547, 8606, 2238, 1707, 388, 1748, 478, 275, 818, 266, 226, 32], '海外 美国': [251744, 1386, 2527, 29116, 5826, 14286, 4337, 4633, 868, 1221, 247, 842, 271, 180, 632, 168, 20, 12], '安徽': [114225, 666, 927, 19002, 2672, 3259, 2129, 1864, 3082, 470, 57, 443, 124, 35, 3051, 49, 8, 4], '重庆 涪陵区': [25432, 117, 160, 4326, 395, 647, 394, 260, 18, 56, 14, 77, 21, 11, 33, 7, 0, 0], '海外 加拿大': [77423, 470, 674, 10697, 1944, 4632, 1474, 1457, 174, 327, 70, 272, 104, 36, 134, 56, 6, 2], '江苏 南京': [516864, 3800, 3471, 77543, 12261, 18265, 9939, 9244, 888, 1744, 336, 1913, 680, 187, 2059, 248, 184, 23], '浙江 宁波': [282669, 1597, 1723, 43045, 18808, 8216, 4669, 5819, 324, 1006, 129, 1853, 330, 81, 1220, 164, 17, 7], '北京 丰台区': [105782, 626, 839, 16739, 2739, 3537, 2013, 1608, 160, 367, 84, 517, 136, 34, 135, 62, 9, 5], '安徽 六安': [40628, 262, 382, 7632, 999, 1322, 837, 619, 49, 152, 24, 196, 51, 12, 156, 24, 0, 0], '广东 中山': [135528, 839, 1189, 20898, 2452, 4052, 2892, 1770, 164, 669, 56, 442, 133, 39, 188, 43, 5, 3], '青海 西宁': [66552, 508, 761, 13605, 4309, 2146, 1329, 892, 87, 185, 37, 170, 51, 22, 350, 21, 5, 3], '河北 秦皇岛': [79960, 497, 695, 14220, 1663, 2355, 1467, 1112, 184, 297, 53, 236, 46, 26, 120, 27, 3, 4], '山东 济南': [305884, 1757, 2349, 47560, 6631, 9468, 5398, 4966, 517, 1114, 204, 708, 359, 104, 786, 166, 41, 15], '山东 威海': [65580, 390, 599, 10939, 1426, 2150, 1217, 810, 77, 205, 56, 184, 59, 20, 83, 29, 2, 1], '湖南 邵阳': [44742, 291, 494, 8548, 938, 1332, 932, 616, 63, 176, 37, 150, 39, 15, 67, 19, 2, 1], '上海 浦东新区': [243752, 1282, 2769, 35702, 6705, 10051, 4271, 4136, 500, 976, 246, 890, 302, 145, 325, 127, 37, 9], '香港 东区': [4918, 21, 48, 1066, 104, 207, 83, 65, 11, 26, 1, 12, 8, 8, 9, 2, 3, 0], '上海 徐汇区': [164137, 887, 1758, 29683, 3446, 5623, 2762, 2590, 247, 630, 108, 504, 218, 72, 221, 72, 13, 6], '宁夏 银川': [128799, 860, 1257, 29263, 2724, 3510, 2493, 1591, 159, 370, 90, 335, 96, 47, 359, 43, 6, 2], '北京 崇文区': [48565, 281, 403, 8873, 1374, 1485, 909, 537, 69, 130, 15, 366, 40, 16, 73, 24, 0, 2], '贵州 黔西南': [43200, 335, 456, 9624, 809, 1255, 866, 463, 88, 113, 21, 135, 30, 15, 167, 12, 2, 0], '江苏 常州': [145786, 748, 1037, 20813, 2587, 4696, 2512, 1979, 152, 443, 93, 380, 179, 313, 195, 61, 3, 2], '福建 莆田': [105647, 642, 948, 17938, 2086, 3293, 2056, 1172, 113, 324, 42, 366, 85, 26, 384, 28, 4, 0], '海外 韩国': [69878, 234, 389, 5781, 799, 3657, 741, 1113, 72, 235, 52, 89, 40, 13, 61, 18, 2, 0], '辽宁 盘锦': [41924, 289, 361, 8267, 919, 1183, 819, 477, 56, 160, 33, 112, 22, 10, 102, 19, 4, 0], '湖北 宜昌': [75149, 466, 595, 12693, 1427, 2500, 1370, 1080, 79, 258, 42, 194, 76, 27, 108, 32, 7, 1], '陕西 榆林': [54989, 388, 545, 10580, 1157, 1412, 1092, 655, 85, 188, 27, 129, 67, 19, 83, 26, 2, 1], '江苏 泰州': [68740, 459, 567, 15322, 1516, 2219, 1314, 924, 76, 286, 31, 170, 84, 15, 424, 27, 6, 2], '重庆': [190197, 895, 1268, 28705, 6603, 6390, 2740, 2627, 211, 669, 83, 3177, 157, 57, 399, 65, 12, 3], '上海 闵行区': [104495, 617, 1030, 15159, 2524, 4392, 1918, 1676, 183, 380, 74, 352, 167, 43, 136, 39, 11, 2], '浙江 温州': [236704, 1325, 1560, 31795, 4646, 7003, 3865, 3231, 271, 1141, 147, 520, 264, 85, 677, 53, 7, 7], '广东 汕头': [276803, 1354, 1382, 36753, 3593, 7148, 4250, 2601, 171, 707, 87, 506, 197, 51, 336, 43, 7, 4], '江苏 盐城': [78866, 552, 728, 13829, 1684, 2893, 1474, 1105, 103, 310, 45, 210, 86, 45, 405, 42, 6, 3], '天津': [146414, 858, 1012, 24635, 3903, 4325, 2613, 1905, 199, 488, 73, 1109, 163, 54, 620, 70, 12, 3], '贵州 遵义': [71507, 497, 706, 14156, 1538, 2394, 1489, 941, 99, 265, 43, 252, 86, 24, 228, 34, 1, 0], '上海 嘉定区': [52788, 327, 465, 8513, 1109, 1893, 1063, 735, 63, 215, 27, 199, 59, 17, 75, 15, 4, 2], '广东 江门': [147461, 869, 1110, 44222, 13904, 3815, 2686, 1904, 114, 797, 52, 8387, 151, 123, 818, 21, 6, 2], '福建': [173048, 1088, 1565, 31922, 3791, 5345, 3432, 1895, 203, 615, 67, 733, 155, 173, 426, 63, 5, 2], '浙江 绍兴': [114815, 738, 943, 19826, 2805, 4039, 2206, 1864, 125, 431, 63, 385, 124, 44, 189, 45, 4, 0], '黑龙江 哈尔滨': [265306, 1528, 1621, 41407, 5786, 8227, 4746, 3943, 361, 1255, 148, 630, 263, 84, 530, 110, 9, 11], '广东 河源': [76547, 532, 682, 13569, 1546, 2070, 1588, 860, 60, 208, 39, 226, 49, 15, 97, 23, 1, 0], '天津 武清区': [26218, 184, 231, 5125, 528, 689, 548, 304, 28, 78, 14, 68, 18, 9, 30, 7, 0, 1], '福建 漳州': [111568, 725, 1137, 20924, 1990, 3976, 2173, 1362, 142, 385, 79, 347, 119, 37, 1469, 34, 3, 3], '广东': [485558, 3645, 3686, 81986, 17836, 13620, 8640, 5222, 574, 1846, 280, 5945, 437, 218, 1460, 169, 23, 8], '河北 张家口': [51922, 359, 459, 10692, 1072, 1551, 1077, 662, 64, 181, 32, 146, 49, 22, 107, 25, 0, 1], '北京 石景山区': [43856, 340, 429, 9048, 1360, 1555, 877, 614, 91, 152, 36, 370, 38, 26, 68, 23, 4, 1], '江苏': [247518, 1146, 1640, 32951, 4339, 7268, 3945, 2943, 274, 724, 136, 717, 246, 555, 1010, 121, 9, 5], '山东 烟台': [111711, 895, 703, 17860, 2362, 3737, 2121, 1772, 167, 448, 82, 269, 103, 48, 154, 43, 9, 9], '内蒙古 包头': [59706, 403, 514, 11815, 1291, 1843, 1245, 830, 76, 200, 34, 203, 40, 32, 118, 26, 2, 4], '湖南 娄底': [36916, 400, 387, 7827, 813, 1138, 879, 583, 45, 149, 27, 119, 33, 10, 227, 17, 3, 0], '西藏 林芝': [42080, 284, 548, 9262, 874, 1309, 815, 432, 83, 128, 31, 129, 18, 19, 68, 13, 1, 0], '西藏 拉萨': [52142, 345, 591, 11686, 1107, 1651, 1086, 676, 80, 161, 33, 170, 43, 16, 138, 12, 3, 2], '山东': [211107, 1188, 1908, 37232, 4556, 6190, 4032, 2705, 311, 1159, 148, 756, 168, 71, 608, 93, 19, 5], '山西 运城': [55037, 397, 523, 10204, 1177, 1602, 1096, 709, 62, 235, 35, 150, 42, 25, 84, 16, 5, 2], '新疆 哈密': [27013, 194, 299, 6099, 626, 874, 578, 290, 82, 88, 19, 85, 19, 9, 48, 9, 1, 0], '海南 海口': [194471, 1413, 1937, 36800, 4501, 6041, 3710, 2573, 717, 611, 122, 615, 151, 104, 1451, 84, 10, 6], '青海 玉树': [40663, 331, 508, 9615, 885, 1364, 884, 439, 65, 129, 35, 143, 19, 11, 60, 5, 0, 1], '广西 柳州': [104400, 608, 802, 15154, 1944, 2988, 1712, 1315, 153, 283, 59, 269, 100, 43, 1318, 34, 1, 2], '湖南': [130348, 576, 953, 20112, 2339, 3292, 2184, 2262, 163, 394, 52, 426, 119, 36, 598, 55, 10, 1], '湖北': [148340, 904, 1137, 27056, 2975, 4112, 2579, 2075, 244, 507, 71, 491, 151, 60, 542, 55, 8, 1], '重庆 渝中区': [52696, 257, 505, 8363, 1368, 2120, 900, 735, 69, 203, 38, 407, 43, 20, 133, 21, 2, 1], '安徽 合肥': [260311, 1590, 1801, 41364, 8265, 7751, 5089, 4585, 1260, 875, 146, 1908, 347, 82, 396, 101, 14, 8], '安徽 阜阳': [48550, 361, 487, 10351, 1230, 1568, 1048, 754, 58, 196, 38, 202, 57, 26, 116, 23, 2, 2], '上海 长宁区': [87964, 603, 843, 13077, 1959, 3382, 1595, 1546, 152, 267, 65, 313, 87, 34, 121, 50, 8, 3], '海外 其他': [263663, 1261, 1548, 27139, 4798, 12458, 4050, 5364, 469, 1057, 183, 628, 324, 84, 1577, 154, 11, 12], '河南 安阳': [61691, 339, 446, 12050, 1296, 1630, 1354, 886, 95, 249, 31, 160, 123, 15, 100, 26, 0, 1], '宁夏 吴忠': [81228, 656, 1117, 19399, 1800, 2490, 1906, 861, 113, 249, 68, 311, 51, 36, 217, 22, 1, 1], '浙江 嘉兴': [133837, 783, 943, 23511, 2792, 4768, 2227, 1842, 169, 434, 75, 344, 173, 50, 180, 42, 12, 7], '北京 大兴区': [59798, 315, 478, 10510, 1655, 1646, 1100, 789, 82, 215, 31, 384, 58, 21, 100, 25, 3, 1], '上海 静安区': [74115, 450, 904, 12207, 1989, 3225, 1382, 1299, 145, 296, 53, 267, 82, 41, 111, 30, 20, 4], '黑龙江 绥化': [38124, 279, 331, 7897, 780, 1200, 810, 404, 35, 131, 20, 128, 35, 9, 58, 22, 2, 0], '广东 珠海': [138299, 770, 1311, 21891, 2801, 4308, 3218, 2191, 169, 481, 71, 427, 144, 44, 536, 43, 7, 4], '山东 菏泽': [48336, 312, 409, 8682, 1103, 1312, 942, 649, 78, 187, 23, 132, 77, 14, 82, 18, 7, 0], '河北': [146272, 770, 1184, 25332, 3032, 4058, 2698, 1607, 148, 466, 65, 548, 108, 308, 544, 63, 3, 2], '四川 宜宾': [35879, 235, 314, 6411, 743, 1254, 807, 482, 50, 148, 15, 93, 37, 7, 107, 13, 0, 4], '江西 宜春': [69692, 498, 558, 14932, 1364, 1923, 1515, 802, 70, 183, 38, 199, 67, 11, 126, 21, 1, 3], '陕西 西安': [462430, 2601, 3251, 71889, 10681, 13241, 8305, 8257, 710, 1770, 291, 1149, 579, 162, 979, 256, 36, 19], '河南 开封': [59237, 360, 456, 10109, 1079, 1494, 1167, 764, 71, 215, 31, 143, 113, 19, 337, 26, 3, 3], '海外 荷兰': [5821, 28, 53, 871, 182, 428, 105, 137, 19, 34, 2, 45, 14, 7, 7, 3, 0, 0], '海外 马来西亚': [47222, 228, 334, 6756, 719, 1491, 903, 582, 52, 132, 26, 102, 30, 10, 103, 6, 2, 0], '江苏 淮安': [60883, 381, 702, 10543, 1291, 2065, 1290, 811, 79, 224, 35, 193, 71, 18, 1134, 18, 3, 1], '山东 滨州': [246554, 1983, 3867, 58297, 5333, 9107, 5302, 3148, 447, 821, 261, 695, 67, 96, 472, 76, 1, 5], '浙江 金华': [125116, 743, 858, 18901, 2611, 3698, 2026, 1762, 177, 594, 80, 274, 128, 35, 1523, 54, 7, 4], '海外': [386207, 1658, 1817, 36186, 5823, 14187, 5004, 4993, 1104, 1121, 178, 795, 282, 134, 561, 153, 20, 13], '新疆 昌吉': [32376, 180, 289, 5980, 655, 860, 622, 366, 28, 104, 25, 88, 20, 13, 55, 9, 1, 1], '福建 厦门': [316789, 1996, 2518, 51194, 6900, 10332, 7957, 5032, 365, 1090, 186, 850, 348, 166, 755, 139, 28, 6], '广西 贵港': [33832, 249, 386, 6664, 724, 1065, 685, 456, 38, 121, 16, 139, 42, 7, 56, 12, 2, 0], '上海 普陀区': [101969, 481, 705, 12830, 1918, 3394, 1445, 1460, 121, 245, 71, 311, 92, 30, 113, 30, 8, 5], '福建 泉州': [211817, 1248, 1485, 32652, 4165, 7076, 3860, 2935, 360, 1013, 118, 489, 260, 71, 1540, 62, 11, 2], '黑龙江 鹤岗': [35192, 262, 368, 7450, 708, 1046, 766, 377, 99, 148, 19, 128, 24, 15, 49, 10, 2, 0], '辽宁 丹东': [45071, 315, 385, 8651, 942, 1496, 937, 579, 60, 145, 35, 162, 32, 8, 197, 16, 1, 2], '贵州 安顺': [40742, 350, 471, 9053, 935, 1265, 839, 437, 50, 104, 31, 165, 41, 14, 153, 10, 2, 2], '香港 其他': [349688, 2144, 3880, 62534, 7013, 11880, 6632, 4351, 425, 1128, 252, 1212, 192, 130, 487, 65, 8, 7], '天津 东丽区': [24860, 168, 271, 5265, 545, 707, 487, 320, 39, 87, 15, 75, 27, 13, 41, 6, 1, 0], '江西 上饶': [54856, 413, 489, 11200, 1194, 1815, 1187, 802, 78, 633, 41, 181, 92, 23, 182, 25, 1, 0], '浙江': [213745, 1062, 1513, 31622, 5964, 5788, 3695, 2472, 255, 842, 109, 965, 188, 70, 4082, 75, 11, 2], '甘肃 白银': [34177, 246, 329, 6968, 649, 999, 701, 329, 34, 102, 19, 107, 29, 11, 57, 14, 0, 1], '四川 雅安': [25242, 145, 240, 8802, 489, 838, 506, 343, 41, 75, 14, 62, 31, 8, 59, 15, 3, 0], '云南 大理': [38021, 263, 371, 7555, 908, 1319, 729, 518, 55, 123, 30, 131, 46, 8, 72, 11, 1, 0], '江苏 徐州': [122265, 741, 863, 18937, 2772, 3727, 2278, 1837, 168, 481, 64, 348, 138, 45, 177, 66, 9, 3], '海外 新加坡': [55390, 344, 517, 8472, 1585, 2407, 1090, 970, 101, 224, 38, 166, 57, 29, 102, 29, 3, 4], '澳门': [36508, 245, 361, 7451, 854, 1563, 798, 469, 52, 155, 29, 115, 26, 16, 215, 12, 0, 0], '北京 宣武区': [58230, 346, 492, 10949, 1690, 2108, 1172, 659, 86, 188, 42, 378, 59, 28, 82, 35, 9, 1], '黑龙江': [91395, 506, 654, 15665, 1898, 2566, 1779, 984, 126, 428, 46, 347, 75, 29, 488, 25, 5, 1], '云南': [87179, 498, 652, 14422, 1785, 2390, 1536, 1216, 87, 242, 45, 252, 98, 21, 626, 29, 3, 6], '内蒙古 呼和浩特': [86769, 521, 4428, 16602, 1920, 3101, 1667, 1253, 124, 298, 50, 252, 103, 30, 156, 41, 13, 0], '福建 南平': [79963, 521, 844, 15651, 1639, 2642, 1689, 907, 87, 251, 35, 252, 74, 19, 547, 215, 4, 0], '河南 郑州': [441159, 2629, 3741, 75959, 10092, 12416, 8881, 7525, 614, 2001, 332, 1084, 588, 164, 1434, 214, 36, 14], '青海 海东': [43128, 328, 555, 10192, 955, 1270, 945, 434, 72, 99, 32, 168, 22, 17, 118, 9, 0, 0], '山西 阳泉': [41374, 293, 449, 9183, 899, 1156, 874, 543, 55, 122, 32, 152, 24, 9, 185, 15, 0, 2], '江西 新余': [50192, 275, 422, 9172, 883, 1289, 908, 481, 67, 114, 30, 135, 35, 19, 146, 14, 1, 0], '香港 九龙城区': [14070, 81, 76, 3630, 264, 634, 219, 178, 17, 73, 10, 76, 11, 3, 188, 4, 0, 0], '山东 临沂': [96701, 506, 706, 16167, 2503, 2587, 1815, 1267, 150, 567, 41, 330, 129, 23, 217, 46, 10, 2], '河南 平顶山': [53818, 319, 676, 10197, 1089, 1481, 1084, 659, 82, 182, 35, 178, 45, 20, 83, 31, 1, 1], '河南 洛阳': [119067, 648, 723, 18717, 2247, 3347, 2096, 2326, 161, 429, 69, 233, 129, 28, 1114, 67, 11, 6], '天津 西青区': [44756, 318, 412, 9602, 1073, 1408, 999, 804, 76, 185, 24, 170, 26, 8, 306, 14, 3, 1], '上海 卢湾区': [64194, 297, 390, 7909, 1005, 1800, 802, 578, 84, 136, 26, 182, 31, 13, 61, 15, 7, 1], '四川 泸州': [37514, 225, 333, 6247, 718, 1162, 671, 487, 42, 94, 20, 124, 41, 7, 39, 17, 4, 0], '广西 来宾': [7757, 31, 39, 1668, 152, 181, 133, 75, 9, 19, 4, 33, 6, 3, 12, 2, 0, 0], '山东 枣庄': [126023, 965, 1612, 28669, 2822, 4085, 2645, 1554, 193, 432, 111, 349, 53, 44, 279, 31, 5, 3], '新疆 乌鲁木齐': [102701, 646, 949, 18558, 2326, 3468, 2537, 1646, 189, 422, 74, 528, 112, 36, 201, 70, 8, 4], '西藏 阿里': [42511, 310, 545, 10410, 941, 1393, 918, 510, 64, 124, 43, 148, 28, 17, 81, 14, 0, 2], '台湾 台中市': [11679, 32, 36, 1731, 149, 261, 160, 86, 12, 29, 4, 26, 4, 0, 4, 0, 1, 0], '北京 房山区': [58419, 430, 1534, 11503, 1513, 1436, 1167, 672, 81, 185, 29, 435, 41, 14, 462, 25, 1, 1], '上海 金山区': [35216, 237, 381, 7077, 633, 1024, 1113, 522, 31, 103, 23, 105, 41, 34, 55, 10, 2, 1], '湖北 咸宁': [36892, 276, 405, 8046, 838, 1212, 777, 488, 41, 132, 35, 128, 29, 11, 88, 12, 1, 2], '辽宁 朝阳': [38322, 267, 339, 8274, 865, 1107, 815, 466, 53, 354, 23, 129, 22, 12, 69, 21, 2, 0], '新疆 巴音郭楞': [28844, 183, 314, 5900, 687, 879, 605, 349, 34, 83, 17, 103, 16, 5, 95, 18, 3, 0], '浙江 舟山': [62813, 343, 472, 10442, 1191, 1733, 980, 685, 213, 141, 30, 167, 47, 11, 137, 28, 1, 1], '重庆 南岸区': [60230, 259, 426, 8015, 1264, 2134, 852, 986, 76, 162, 26, 344, 56, 11, 100, 22, 3, 0], '甘肃 兰州': [120602, 761, 942, 22030, 2406, 3387, 2277, 1679, 211, 418, 70, 332, 144, 48, 187, 73, 7, 8], '澳门 花地玛堂区': [12356, 53, 52, 2205, 176, 418, 139, 111, 17, 22, 4, 25, 12, 1, 176, 1, 1, 1], '北京 顺义区': [41413, 275, 348, 8654, 1254, 1219, 810, 519, 62, 107, 25, 355, 34, 19, 68, 19, 0, 0], '甘肃 酒泉': [27608, 210, 299, 6268, 711, 849, 606, 328, 37, 73, 22, 105, 25, 11, 407, 10, 0, 0], '天津 河东区': [37566, 264, 406, 7374, 910, 1318, 773, 550, 39, 168, 19, 123, 39, 14, 62, 18, 1, 1], '云南 临沧': [22724, 170, 241, 5156, 513, 711, 447, 256, 28, 63, 24, 62, 16, 11, 48, 11, 0, 0], '宁夏 固原': [79550, 670, 1033, 19077, 1723, 2444, 1743, 810, 120, 349, 58, 310, 44, 20, 519, 26, 2, 1], '陕西 汉中': [50603, 348, 494, 10122, 1004, 1436, 1022, 576, 58, 130, 51, 129, 46, 14, 154, 14, 1, 4], '河北 廊坊': [72262, 472, 641, 13117, 1602, 2174, 1338, 984, 113, 310, 59, 185, 78, 17, 118, 33, 7, 2], '天津 和平区': [100184, 512, 709, 13983, 2046, 3019, 1592, 1266, 131, 265, 58, 248, 82, 37, 130, 42, 11, 5], '山东 德州': [58940, 410, 580, 11403, 1177, 1814, 1125, 751, 78, 182, 39, 179, 45, 20, 95, 29, 10, 3], '安徽 亳州': [32887, 225, 316, 6953, 834, 1072, 667, 386, 48, 132, 18, 130, 33, 18, 59, 9, 1, 2], '湖南 株洲': [57882, 404, 479, 10081, 1248, 1824, 1158, 890, 74, 184, 31, 195, 60, 19, 91, 17, 3, 5], '上海 松江区': [59496, 369, 591, 9406, 1325, 2205, 1086, 1002, 89, 240, 41, 201, 59, 19, 98, 18, 2, 1], '山西 临汾': [52527, 374, 468, 10505, 1250, 1571, 1156, 694, 71, 194, 25, 172, 36, 26, 112, 14, 3, 1], '黑龙江 大庆': [56011, 409, 435, 11007, 1298, 1925, 1157, 854, 89, 242, 29, 172, 52, 18, 208, 27, 3, 7], '天津 宝坻区': [21217, 185, 240, 4476, 474, 597, 440, 255, 31, 62, 15, 74, 15, 8, 40, 5, 0, 0], '四川 绵阳': [62443, 377, 473, 10015, 1456, 2234, 1131, 916, 86, 245, 39, 190, 73, 20, 115, 28, 1, 2], '河南 信阳': [49669, 378, 517, 9674, 1134, 1586, 1173, 774, 89, 228, 32, 159, 64, 19, 90, 26, 1, 2], '辽宁 辽阳': [35951, 298, 337, 7454, 875, 1144, 796, 380, 48, 89, 21, 144, 21, 18, 57, 7, 5, 3], '海外 德国': [15459, 88, 164, 2116, 1080, 1116, 261, 303, 41, 65, 28, 87, 18, 7, 21, 26, 1, 1], '山东 济宁': [74154, 441, 534, 12300, 1514, 2099, 1483, 969, 120, 309, 68, 198, 65, 47, 116, 55, 6, 3], '湖北 随州': [34617, 256, 356, 7433, 749, 1055, 754, 458, 39, 111, 25, 139, 30, 9, 124, 9, 1, 1], '河南 漯河': [64936, 435, 832, 14121, 1190, 1810, 2364, 844, 186, 225, 62, 246, 101, 18, 112, 18, 2, 0], '江西 南昌': [248582, 1158, 1549, 33616, 4643, 6069, 3953, 3493, 318, 2613, 112, 995, 292, 75, 2714, 121, 16, 5], '香港 中西区': [32526, 119, 345, 4399, 492, 1375, 470, 429, 49, 133, 25, 84, 35, 31, 69, 13, 1, 1], '新疆 塔城': [22264, 167, 264, 4908, 462, 662, 456, 249, 42, 66, 8, 70, 11, 2, 38, 3, 2, 0], '吉林 松原': [46092, 349, 528, 10087, 1019, 1395, 1024, 538, 65, 128, 26, 140, 41, 19, 90, 13, 1, 0], '山西': [87331, 459, 734, 15883, 1828, 2332, 1779, 1165, 116, 328, 52, 278, 49, 33, 781, 23, 3, 1], '海外 法国': [59497, 380, 494, 10072, 1370, 3234, 1187, 1126, 121, 249, 41, 195, 56, 29, 109, 37, 3, 3], '广东 梅州': [88817, 552, 715, 14044, 1422, 2271, 1683, 1065, 64, 265, 35, 231, 62, 15, 94, 14, 2, 4], '湖南 常德': [47365, 327, 421, 8641, 1169, 1550, 977, 888, 75, 179, 30, 150, 51, 15, 89, 18, 3, 1], '天津 河北区': [30585, 199, 275, 6001, 716, 1046, 602, 425, 48, 78, 19, 122, 22, 10, 56, 13, 1, 1], '广西 桂林': [91002, 481, 625, 13352, 1727, 2660, 1517, 1355, 116, 296, 40, 232, 92, 33, 176, 35, 3, 2], '四川 南充': [53447, 262, 319, 7877, 944, 1576, 939, 808, 54, 173, 30, 118, 48, 15, 129, 14, 5, 0], '上海 崇明县': [23969, 171, 223, 5132, 464, 651, 441, 292, 38, 65, 23, 62, 17, 8, 41, 8, 0, 1], '海外 英国': [89884, 542, 897, 13679, 2336, 5382, 1740, 2204, 236, 380, 70, 292, 126, 44, 255, 58, 9, 3], '陕西 安康': [41223, 309, 440, 8934, 889, 1270, 926, 559, 45, 109, 27, 118, 41, 17, 142, 18, 1, 2], '北京 平谷区': [29610, 190, 282, 6582, 881, 824, 563, 358, 121, 85, 17, 269, 17, 10, 50, 8, 1, 1], '吉林 吉林': [82993, 479, 698, 14882, 1693, 2420, 1638, 988, 105, 293, 43, 206, 73, 29, 168, 28, 7, 1], '广东 佛山': [282547, 1631, 2160, 38985, 5479, 8844, 6426, 5485, 303, 1011, 131, 959, 351, 102, 342, 78, 16, 6], '北京 密云县': [27534, 266, 254, 6465, 861, 718, 582, 307, 23, 73, 21, 313, 17, 8, 35, 9, 0, 1], '河北 衡水': [45510, 336, 430, 12302, 1081, 1418, 885, 648, 55, 171, 34, 155, 31, 11, 80, 25, 0, 0], '江苏 宿迁': [50007, 312, 419, 9875, 1149, 1457, 917, 664, 57, 254, 49, 184, 49, 25, 617, 14, 1, 1], '四川 凉山': [22771, 146, 218, 4810, 468, 736, 462, 272, 51, 80, 20, 66, 26, 5, 40, 8, 0, 0], '四川': [143020, 782, 1031, 22441, 2730, 4776, 2603, 1805, 162, 518, 68, 477, 122, 46, 656, 62, 3, 0], '广西': [109337, 811, 1224, 19988, 2640, 3509, 2168, 1332, 127, 394, 66, 440, 116, 33, 798, 43, 0, 3], '辽宁 鞍山': [66423, 408, 512, 11559, 1347, 1893, 1251, 768, 59, 265, 48, 200, 61, 12, 221, 34, 5, 0], '重庆 江北区': [49426, 304, 476, 7808, 1188, 2017, 944, 790, 73, 202, 30, 237, 55, 20, 90, 18, 4, 2], '云南 保山': [24979, 250, 271, 5596, 534, 747, 536, 306, 29, 63, 14, 80, 20, 8, 49, 7, 2, 0], '贵州 毕节': [38508, 341, 413, 8866, 898, 1316, 841, 484, 64, 126, 35, 128, 21, 6, 929, 16, 0, 0], '湖北 荆州': [57398, 392, 534, 11647, 1279, 1933, 1247, 881, 91, 203, 35, 177, 52, 27, 122, 20, 3, 7], '陕西 咸阳': [62095, 472, 527, 12479, 1159, 1775, 1207, 838, 95, 221, 35, 165, 66, 23, 399, 22, 4, 0], '云南 昆明': [180194, 1048, 1392, 28870, 4092, 6135, 3397, 2853, 278, 1126, 147, 468, 255, 57, 311, 102, 10, 9], '上海 虹口区': [74209, 382, 694, 10960, 1853, 3168, 1389, 1275, 201, 249, 62, 273, 85, 32, 116, 30, 4, 3], '辽宁 铁岭': [38212, 288, 357, 7719, 837, 1098, 789, 412, 52, 110, 24, 137, 27, 16, 1152, 26, 3, 1], '江苏 扬州': [93457, 593, 685, 15463, 2162, 3561, 1817, 1549, 147, 288, 66, 311, 116, 30, 193, 59, 7, 0], '吉林': [80296, 508, 674, 15462, 1810, 2376, 1716, 909, 86, 246, 31, 383, 61, 18, 362, 32, 1, 0], '重庆 万州区': [73167, 259, 401, 8362, 925, 1472, 850, 661, 115, 161, 24, 140, 47, 20, 109, 114, 2, 1], '山西 长治': [46023, 341, 469, 9351, 1063, 1366, 1094, 597, 125, 156, 26, 157, 33, 15, 114, 15, 1, 0], '黑龙江 牡丹江': [43732, 339, 387, 9029, 977, 1475, 896, 610, 58, 204, 23, 145, 48, 12, 1956, 21, 1, 0], '河南 鹤壁': [30613, 231, 307, 6235, 658, 891, 653, 379, 23, 108, 25, 103, 29, 10, 122, 13, 0, 1], '四川 阿坝': [19867, 165, 217, 4499, 390, 609, 379, 218, 28, 50, 19, 72, 14, 6, 25, 3, 0, 0], '湖北 孝感': [43702, 335, 389, 9089, 883, 1273, 903, 683, 65, 156, 21, 139, 40, 16, 75, 17, 0, 2], '浙江 衢州': [52661, 345, 460, 10281, 2437, 1590, 1110, 696, 63, 144, 38, 184, 39, 18, 71, 9, 5, 1], '广东 肇庆': [141093, 682, 760, 31258, 1819, 2619, 1910, 1183, 83, 286, 39, 258, 82, 21, 116, 17, 2, 1], '湖北 襄阳': [57549, 387, 575, 11340, 1367, 2279, 1221, 949, 72, 243, 29, 180, 79, 16, 93, 29, 3, 2], '安徽 滁州': [40597, 281, 362, 7721, 864, 1216, 827, 578, 58, 121, 22, 151, 48, 13, 396, 19, 2, 1], '安徽 淮北': [33724, 232, 336, 7126, 825, 1119, 712, 465, 49, 138, 22, 129, 38, 14, 59, 16, 0, 4], '云南 怒江': [22743, 187, 255, 5212, 518, 696, 510, 256, 32, 59, 18, 76, 17, 8, 116, 3, 0, 0], '江苏 南通': [112214, 625, 752, 17550, 2262, 3603, 2601, 1909, 143, 428, 60, 306, 135, 41, 209, 47, 5, 2], '广东 湛江': [95259, 625, 858, 17006, 1899, 3022, 2061, 1378, 79, 374, 109, 295, 74, 39, 135, 25, 7, 3], '四川 乐山': [38690, 243, 320, 6552, 811, 1410, 750, 535, 59, 120, 23, 108, 37, 13, 87, 15, 2, 2], '甘肃 天水': [45220, 274, 376, 7778, 705, 1088, 763, 538, 46, 103, 19, 120, 36, 8, 936, 17, 2, 1], '重庆 渝北区': [41638, 252, 303, 5849, 912, 1768, 714, 693, 59, 141, 56, 132, 47, 10, 46, 16, 2, 3], '福建 宁德': [58859, 420, 494, 11596, 1207, 2017, 1060, 787, 81, 205, 36, 188, 66, 27, 97, 20, 4, 2], '江西 景德镇': [50283, 313, 491, 9890, 1036, 1578, 982, 590, 72, 154, 34, 197, 41, 11, 528, 17, 2, 1], '安徽 黄山': [37940, 255, 357, 8668, 1094, 1187, 875, 469, 40, 121, 21, 271, 78, 12, 849, 16, 2, 2], '天津 津南区': [22219, 167, 247, 4915, 522, 805, 863, 330, 53, 99, 18, 73, 16, 12, 39, 8, 0, 0], '湖南 永州': [49958, 335, 391, 7889, 804, 1140, 896, 531, 58, 150, 28, 128, 68, 20, 401, 14, 3, 2], '湖北 十堰': [46334, 340, 441, 9022, 1026, 1443, 1020, 768, 61, 194, 39, 125, 73, 15, 71, 22, 2, 1], '河南 商丘': [48344, 312, 429, 9192, 1138, 1415, 963, 664, 117, 203, 21, 158, 51, 13, 110, 19, 0, 1], '安徽 蚌埠': [55881, 324, 447, 10444, 1286, 1386, 948, 1107, 61, 167, 27, 251, 74, 20, 238, 16, 0, 4], '黑龙江 佳木斯': [39170, 292, 330, 7907, 852, 1285, 804, 497, 58, 166, 27, 140, 33, 13, 84, 13, 4, 1], '福建 三明': [95813, 574, 935, 17370, 1913, 2760, 2059, 1066, 111, 271, 53, 301, 127, 38, 261, 35, 2, 2], '黑龙江 伊春': [31552, 236, 344, 7319, 692, 954, 764, 359, 48, 108, 20, 119, 20, 8, 78, 10, 0, 1], '青海 海西': [39199, 308, 493, 9027, 853, 1158, 784, 385, 65, 111, 30, 121, 21, 7, 79, 15, 0, 2], '辽宁 抚顺': [52891, 304, 485, 9627, 1055, 1413, 1094, 746, 63, 135, 27, 185, 39, 14, 275, 25, 4, 0], '湖北 黄冈': [43499, 322, 441, 8925, 982, 1347, 930, 690, 57, 143, 36, 135, 39, 16, 289, 17, 2, 5], '河南 焦作': [52839, 473, 404, 9717, 1201, 1527, 1223, 729, 65, 196, 28, 126, 51, 19, 118, 28, 4, 0], '海外 日本': [114364, 515, 555, 11249, 2016, 6233, 1545, 1938, 142, 332, 45, 251, 117, 45, 162, 56, 6, 3], '甘肃 甘南': [21561, 181, 246, 5413, 437, 644, 514, 217, 36, 59, 11, 72, 10, 7, 44, 3, 0, 0], '海外 瑞士': [8952, 20, 73, 6153, 210, 343, 385, 153, 15, 31, 6, 53, 5, 7, 12, 4, 7, 0], '江西 鹰潭': [37036, 276, 408, 7918, 776, 1170, 801, 444, 51, 103, 29, 130, 20, 11, 981, 10, 0, 2], '吉林 延边朝鲜族自治州': [47470, 376, 461, 9919, 999, 1512, 1061, 591, 65, 177, 24, 143, 32, 14, 85, 14, 1, 4], '云南 玉溪': [31058, 193, 318, 6544, 619, 1033, 605, 392, 42, 118, 28, 97, 18, 11, 53, 13, 1, 0], '贵州 六盘水': [42178, 336, 516, 9822, 1025, 1531, 1002, 513, 57, 133, 34, 184, 31, 16, 146, 6, 2, 1], '新疆': [71446, 653, 582, 11998, 1344, 1787, 1268, 669, 80, 183, 26, 264, 36, 18, 719, 27, 3, 1], '河南 濮阳': [44939, 350, 489, 8562, 1537, 1264, 1069, 602, 49, 171, 26, 117, 51, 19, 80, 24, 5, 0], '江西 萍乡': [49426, 330, 464, 9223, 954, 1324, 1098, 615, 59, 146, 24, 158, 45, 19, 95, 18, 0, 0], '陕西 铜川': [41974, 287, 404, 8784, 738, 1168, 833, 409, 42, 99, 16, 114, 34, 7, 77, 14, 1, 0], '台湾 台南市': [4473, 23, 22, 1148, 93, 114, 89, 51, 5, 16, 1, 10, 3, 1, 6, 2, 0, 0], '广东 云浮': [29945, 180, 253, 5399, 648, 878, 630, 424, 32, 103, 19, 112, 29, 9, 56, 6, 0, 0], '四川 内江': [29602, 397, 302, 6168, 591, 1002, 653, 415, 40, 78, 22, 97, 33, 10, 70, 8, 3, 1], '广西 防城港': [27872, 190, 317, 6569, 655, 919, 614, 323, 44, 117, 25, 96, 25, 19, 37, 5, 0, 0], '河南 许昌': [46070, 323, 396, 9405, 1158, 1367, 998, 892, 59, 184, 15, 130, 65, 16, 78, 23, 2, 1], '黑龙江 七台河': [28106, 198, 323, 6350, 603, 886, 578, 316, 46, 106, 24, 115, 16, 16, 50, 12, 0, 1], '内蒙古 鄂尔多斯': [44233, 287, 430, 9203, 940, 1235, 1037, 596, 67, 198, 25, 139, 52, 9, 291, 18, 0, 4], '新疆 克孜勒苏': [18813, 156, 248, 4854, 448, 621, 453, 218, 25, 64, 21, 67, 9, 8, 83, 8, 2, 0], '陕西': [108301, 669, 868, 19816, 2405, 2936, 2060, 1403, 135, 365, 69, 363, 82, 25, 797, 47, 4, 2], '河南 三门峡': [36209, 229, 325, 6832, 796, 1042, 742, 392, 49, 160, 31, 122, 26, 10, 923, 10, 1, 1], '山东 日照': [49062, 301, 1783, 9068, 1094, 1394, 860, 669, 60, 168, 42, 110, 43, 18, 105, 14, 2, 0], '安徽 芜湖': [74556, 431, 540, 12340, 2059, 2444, 1425, 1254, 88, 249, 32, 441, 99, 26, 260, 29, 3, 1], '山西 忻州': [38079, 302, 453, 8399, 836, 1174, 844, 465, 65, 131, 36, 135, 29, 13, 113, 18, 0, 0], '浙江 湖州': [90064, 453, 651, 14326, 1556, 2533, 1511, 1190, 117, 322, 44, 224, 61, 15, 535, 31, 10, 3], '湖南 张家界': [32053, 218, 345, 7093, 694, 1030, 721, 444, 45, 97, 20, 95, 14, 18, 72, 5, 0, 1], '西藏 昌都': [43270, 347, 579, 10660, 952, 1393, 919, 465, 77, 123, 35, 152, 26, 13, 646, 6, 2, 0], '福建 龙岩': [82886, 552, 844, 15900, 1681, 2530, 1734, 1035, 94, 244, 49, 278, 78, 22, 713, 36, 0, 2], '安徽 马鞍山': [53603, 280, 401, 8565, 1168, 1457, 855, 643, 54, 135, 40, 172, 67, 18, 69, 67, 0, 3], '江西 吉安': [56201, 373, 456, 10405, 1080, 1424, 1035, 659, 68, 147, 36, 156, 41, 17, 98, 18, 1, 1], '安徽 池州': [29173, 226, 348, 6581, 862, 910, 647, 421, 59, 80, 21, 269, 21, 10, 53, 11, 1, 0], '浙江 丽水': [74292, 454, 560, 13691, 1543, 1956, 1324, 1046, 109, 295, 31, 208, 33, 21, 167, 21, 7, 4], '香港 沙田区': [5181, 36, 30, 1200, 83, 256, 86, 68, 10, 14, 3, 14, 2, 1, 6, 3, 0, 0], '北京 门头沟区': [26167, 218, 240, 6452, 909, 790, 598, 305, 35, 77, 15, 296, 14, 14, 39, 14, 0, 2], '陕西 商洛': [34089, 286, 381, 7921, 724, 1015, 738, 376, 171, 92, 19, 103, 24, 13, 65, 15, 1, 0], '广西 玉林': [43149, 318, 464, 7982, 994, 1523, 902, 657, 62, 209, 30, 156, 57, 15, 74, 18, 1, 1], '内蒙古 通辽': [42302, 314, 425, 9063, 1012, 1294, 873, 494, 58, 249, 27, 153, 44, 15, 70, 6, 2, 0], '新疆 伊犁': [32331, 204, 327, 6658, 655, 931, 754, 426, 64, 99, 15, 80, 22, 8, 105, 16, 4, 0], '云南 德宏': [25383, 299, 300, 5687, 513, 804, 578, 304, 27, 92, 12, 75, 20, 12, 106, 10, 0, 1], '西藏': [70092, 334, 418, 10599, 1123, 1476, 1032, 534, 52, 358, 25, 183, 28, 12, 506, 9, 1, 0], '天津 北辰区': [26971, 205, 277, 5554, 505, 801, 510, 351, 44, 72, 10, 83, 25, 3, 59, 7, 3, 2], '重庆 綦江县': [9924, 77, 102, 2228, 200, 357, 212, 130, 13, 32, 7, 30, 11, 2, 13, 0, 0, 0], '天津 河西区': [53606, 390, 430, 9143, 1192, 1938, 1028, 823, 95, 182, 39, 182, 58, 21, 75, 24, 0, 1], '天津 蓟县': [18122, 144, 176, 4209, 408, 577, 404, 232, 28, 52, 14, 64, 14, 4, 36, 6, 0, 0], '江西 抚州': [42498, 345, 447, 8611, 911, 1296, 914, 514, 70, 134, 25, 180, 32, 17, 65, 14, 0, 0], '江苏 镇江': [67431, 446, 549, 11688, 1418, 2446, 1366, 987, 92, 217, 46, 204, 84, 20, 108, 33, 1, 0], '河南 南阳': [66535, 366, 520, 11862, 1316, 1938, 1401, 1364, 102, 254, 53, 165, 92, 26, 229, 48, 3, 0], '甘肃 陇南': [34089, 222, 393, 7912, 598, 924, 674, 336, 53, 94, 15, 91, 19, 7, 42, 17, 3, 1], '安徽 安庆': [51312, 280, 391, 9823, 1716, 1656, 1026, 723, 76, 167, 32, 553, 57, 14, 135, 27, 5, 0], '贵州 黔南': [38445, 293, 444, 8339, 842, 1166, 809, 454, 62, 99, 33, 116, 21, 13, 157, 20, 1, 0], '广西 钦州': [33725, 255, 334, 6645, 756, 1070, 649, 443, 56, 120, 19, 105, 52, 23, 59, 11, 1, 0], '云南 曲靖': [34053, 221, 301, 6577, 720, 986, 681, 405, 64, 114, 15, 91, 31, 6, 51, 19, 3, 2], '四川 德阳': [39878, 293, 322, 7167, 942, 1517, 906, 606, 61, 146, 33, 151, 55, 15, 68, 19, 4, 2], '贵州 黔东南': [46452, 327, 432, 9491, 855, 1420, 917, 503, 50, 110, 37, 141, 31, 21, 117, 7, 1, 1], '新疆 吐鲁番': [20335, 145, 260, 5100, 448, 664, 411, 217, 17, 66, 12, 73, 13, 12, 68, 10, 0, 1], '河南 周口': [46861, 292, 412, 8376, 926, 1137, 837, 553, 45, 174, 24, 129, 47, 12, 91, 29, 2, 1], '宁夏': [53667, 357, 552, 11971, 1318, 1640, 1190, 603, 71, 286, 23, 220, 29, 10, 513, 20, 1, 0], '香港 油尖旺区': [4867, 26, 28, 895, 59, 217, 49, 45, 15, 12, 6, 7, 3, 1, 3, 0, 1, 0], '广东 揭阳': [179087, 1577, 906, 18292, 1863, 3407, 2601, 1422, 84, 494, 41, 292, 135, 14, 256, 11, 3, 3], '广东 潮州': [109940, 561, 807, 19160, 3607, 3181, 1909, 1651, 153, 599, 43, 919, 68, 16, 112, 13, 2, 2], '贵州': [69539, 438, 698, 13169, 1499, 2068, 1325, 784, 91, 324, 28, 261, 45, 21, 510, 14, 3, 1], '海外 俄罗斯': [24487, 218, 299, 5562, 579, 1187, 530, 379, 41, 96, 13, 97, 21, 6, 40, 13, 3, 0], '山西 朔州': [33644, 273, 394, 7811, 864, 1063, 786, 395, 52, 110, 26, 128, 18, 16, 94, 21, 3, 1], '重庆 江津市': [12421, 81, 133, 2474, 242, 393, 264, 184, 16, 32, 10, 40, 8, 2, 16, 6, 3, 0], '吉林 通化': [60202, 371, 518, 11457, 1153, 1651, 1073, 576, 63, 129, 45, 191, 31, 18, 100, 12, 1, 0], '重庆 合川区': [13671, 194, 140, 2965, 302, 460, 288, 241, 15, 40, 10, 40, 12, 8, 20, 11, 0, 1], '天津 滨海新区': [17255, 110, 203, 3075, 301, 454, 318, 291, 24, 61, 9, 45, 31, 3, 18, 16, 0, 0], '山东 淄博': [86623, 450, 590, 13656, 1531, 2514, 1538, 1113, 135, 330, 54, 253, 105, 31, 190, 37, 6, 4], '甘肃 定西': [24911, 203, 269, 6125, 528, 715, 589, 307, 40, 77, 17, 74, 13, 5, 46, 9, 0, 0], '河北 沧州': [72074, 547, 575, 15830, 1406, 1953, 1547, 874, 94, 277, 45, 192, 82, 20, 118, 29, 3, 2], '内蒙古 巴彦淖尔盟': [33927, 274, 376, 7410, 734, 990, 702, 400, 55, 98, 24, 99, 18, 10, 78, 15, 0, 1], '山东 莱芜': [29541, 208, 257, 6180, 567, 935, 573, 319, 41, 86, 20, 101, 30, 11, 58, 8, 1, 0], '上海 奉贤区': [35130, 221, 319, 6726, 814, 1223, 704, 522, 50, 109, 30, 142, 52, 8, 38, 14, 0, 0], '内蒙古 呼伦贝尔': [40923, 328, 414, 9155, 917, 1313, 923, 552, 80, 135, 25, 157, 43, 16, 75, 21, 3, 1], '内蒙古 锡林郭勒盟': [30267, 275, 367, 7163, 649, 963, 665, 420, 59, 92, 16, 118, 23, 10, 52, 13, 1, 1], '台湾 其他': [95712, 616, 1400, 18251, 1957, 3206, 1873, 1118, 141, 298, 69, 356, 50, 30, 1299, 19, 1, 2], '内蒙古 乌海': [41386, 240, 403, 8438, 801, 1089, 812, 397, 45, 100, 26, 127, 20, 6, 136, 7, 0, 0], '重庆 大足县': [9695, 81, 92, 2235, 202, 344, 234, 139, 18, 43, 7, 21, 7, 4, 12, 6, 0, 0], '广东 阳江': [76547, 562, 710, 14899, 1325, 2476, 1614, 830, 48, 247, 34, 300, 45, 18, 91, 13, 1, 1], '新疆 博尔塔拉': [21986, 195, 295, 5320, 496, 677, 502, 262, 33, 88, 20, 72, 10, 6, 37, 9, 3, 0], '台湾 台东县': [7529, 44, 17, 1142, 87, 79, 70, 48, 11, 13, 3, 18, 2, 0, 312, 0, 0, 0], '河北 邢台': [72190, 419, 568, 12021, 1488, 1855, 1307, 802, 96, 238, 35, 167, 50, 23, 233, 22, 2, 0], '山西 晋城': [44679, 345, 423, 9296, 1177, 1460, 936, 556, 73, 153, 37, 167, 46, 19, 80, 9, 1, 0], '江西 赣州': [110639, 773, 925, 22059, 2354, 2981, 2388, 1427, 145, 377, 57, 300, 141, 29, 224, 57, 10, 4], '青海 黄南': [40283, 297, 517, 9657, 859, 1265, 828, 437, 143, 82, 32, 122, 14, 18, 824, 11, 1, 3], '青海 果洛': [41314, 305, 521, 9901, 835, 1370, 882, 423, 66, 108, 40, 153, 22, 12, 242, 12, 2, 1], '宁夏 石嘴山': [88484, 695, 1105, 19829, 1909, 2661, 1961, 986, 115, 218, 51, 312, 66, 23, 154, 21, 3, 0], '天津 塘沽区': [30922, 239, 263, 6143, 686, 987, 791, 422, 43, 128, 20, 104, 26, 12, 60, 18, 1, 0], '云南 文山': [25256, 201, 317, 5514, 543, 835, 513, 293, 49, 90, 12, 86, 20, 12, 41, 5, 2, 2], '重庆 黔江区': [9676, 70, 100, 2202, 213, 336, 208, 129, 12, 23, 5, 28, 8, 4, 17, 4, 1, 1], '广西 北海': [43397, 273, 408, 7797, 778, 1285, 819, 534, 46, 129, 27, 146, 42, 14, 296, 13, 0, 0], '四川 达州': [33841, 197, 287, 6027, 728, 1181, 725, 472, 47, 126, 19, 89, 29, 9, 173, 20, 1, 3], '甘肃 庆阳': [28057, 202, 301, 6582, 627, 856, 637, 306, 39, 92, 11, 99, 19, 7, 98, 7, 0, 0], '湖北 荆门': [40467, 266, 419, 7769, 844, 1191, 851, 472, 46, 112, 28, 136, 33, 15, 62, 21, 0, 0], '云南 红河': [33222, 203, 294, 6390, 693, 1056, 627, 425, 48, 100, 22, 114, 34, 4, 60, 15, 0, 2], '西藏 那曲': [41527, 271, 541, 9865, 867, 1290, 861, 415, 65, 95, 40, 166, 30, 45, 143, 6, 0, 1], '上海 南汇区': [26273, 209, 302, 5732, 545, 852, 588, 299, 36, 62, 13, 103, 29, 11, 37, 5, 1, 2], '安徽 宿州': [54277, 241, 377, 7403, 894, 1159, 807, 533, 55, 135, 19, 134, 59, 10, 138, 14, 2, 0], '台湾 嘉义市': [2856, 22, 23, 1067, 119, 83, 45, 29, 8, 6, 2, 25, 3, 0, 2, 0, 0, 0], '广东 韶关': [100653, 547, 805, 16493, 1701, 2601, 2688, 1121, 69, 264, 34, 305, 76, 12, 148, 21, 1, 1], '辽宁 营口': [43229, 300, 389, 8837, 961, 1339, 876, 485, 61, 202, 20, 110, 31, 15, 63, 16, 1, 2], '江西 九江': [76359, 479, 653, 13236, 1492, 2122, 1432, 1345, 90, 233, 43, 230, 71, 14, 216, 28, 3, 3], '湖南 湘西土家族苗族自治州': [29361, 243, 317, 6622, 673, 904, 604, 423, 50, 99, 13, 103, 23, 5, 57, 10, 0, 1], '四川 甘孜': [21994, 167, 224, 5223, 477, 793, 464, 216, 36, 59, 19, 58, 17, 4, 214, 7, 1, 1], '云南 迪庆': [26066, 181, 309, 5138, 464, 669, 506, 227, 34, 50, 10, 84, 10, 2, 123, 2, 1, 0], '上海 青浦区': [38028, 232, 346, 7049, 775, 1156, 680, 462, 62, 112, 29, 134, 33, 16, 46, 13, 1, 1], '江苏 连云港': [66734, 503, 504, 11042, 1421, 1808, 1240, 851, 82, 234, 40, 198, 58, 25, 155, 26, 0, 4], '甘肃 武威': [27292, 206, 284, 6493, 582, 734, 610, 286, 43, 68, 13, 100, 15, 8, 48, 10, 0, 0], '吉林 白山': [48808, 329, 458, 10332, 894, 1340, 975, 536, 48, 2291, 30, 177, 33, 8, 82, 15, 2, 1], '吉林 白城': [44171, 356, 455, 9785, 1005, 1338, 903, 518, 58, 111, 34, 162, 35, 22, 62, 20, 2, 1], '湖南 湘潭': [59563, 379, 489, 10143, 1038, 1614, 1080, 900, 62, 165, 30, 159, 59, 25, 183, 18, 4, 1], '天津 静海县': [20909, 139, 222, 4697, 465, 656, 438, 246, 25, 73, 13, 70, 16, 9, 24, 5, 3, 0], '海外 巴西': [22221, 138, 233, 4110, 435, 759, 434, 247, 41, 76, 13, 94, 13, 5, 42, 7, 1, 0], '湖北 恩施土家族苗族自治州': [37944, 275, 338, 7538, 782, 1208, 701, 490, 53, 135, 25, 105, 35, 11, 49, 9, 1, 2], '广东 清远': [81474, 544, 674, 14952, 1509, 2324, 1733, 1107, 65, 232, 37, 266, 71, 21, 180, 10, 1, 1], '广东 茂名': [90113, 625, 823, 17121, 2466, 2461, 1780, 1137, 87, 327, 43, 445, 78, 33, 152, 27, 1, 1], '重庆 巴南区': [16536, 93, 152, 3038, 374, 553, 330, 289, 29, 46, 14, 47, 22, 10, 30, 4, 0, 1], '湖北 鄂州': [37677, 272, 338, 6465, 620, 959, 634, 371, 37, 81, 20, 89, 24, 7, 49, 11, 0, 1], '安徽 巢湖': [26730, 181, 259, 5909, 679, 937, 617, 323, 39, 88, 23, 196, 37, 13, 144, 7, 0, 1], '山东 聊城': [51509, 310, 389, 9115, 992, 1353, 1775, 635, 65, 190, 34, 159, 33, 14, 63, 22, 1, 0], '辽宁 葫芦岛': [39562, 286, 367, 8267, 909, 1380, 776, 504, 51, 143, 30, 147, 29, 11, 181, 13, 3, 1], '湖南 益阳': [34180, 234, 356, 7306, 722, 1186, 757, 544, 42, 124, 22, 92, 29, 11, 176, 12, 1, 0], '海外 蒙古': [1176, 11, 7, 482, 86, 92, 26, 28, 3, 4, 0, 34, 3, 0, 5, 1, 0, 0], '甘肃 嘉峪关': [47670, 234, 369, 7066, 694, 913, 694, 308, 41, 85, 16, 128, 24, 6, 69, 11, 2, 1], '广西 贺州': [30973, 261, 302, 6554, 686, 927, 630, 379, 213, 113, 19, 132, 22, 11, 113, 13, 2, 1], '辽宁 本溪': [44511, 320, 384, 8096, 778, 1341, 904, 494, 48, 133, 23, 112, 33, 11, 69, 10, 2, 2], '香港 湾仔区': [4945, 19, 53, 1063, 112, 211, 79, 77, 9, 24, 1, 11, 6, 3, 7, 2, 0, 0], '海南 三亚': [139085, 1026, 1551, 31061, 3042, 4264, 2910, 1616, 177, 411, 83, 488, 99, 49, 280, 47, 5, 3], '重庆 石柱土家族自治县': [8735, 68, 109, 2004, 192, 289, 166, 109, 11, 22, 11, 22, 5, 3, 12, 2, 0, 0], '青海 海南': [44303, 363, 580, 10146, 928, 1285, 1000, 455, 51, 113, 36, 138, 28, 15, 199, 6, 3, 1], '辽宁 阜新': [33885, 252, 362, 7525, 784, 1035, 747, 424, 58, 119, 22, 127, 23, 25, 70, 13, 0, 0], '台湾': [51053, 294, 498, 9660, 1023, 1728, 1734, 626, 60, 162, 24, 135, 35, 16, 93, 12, 0, 1], '湖南 衡阳': [62725, 423, 438, 11766, 1243, 1930, 1290, 1010, 122, 206, 42, 192, 80, 36, 1034, 20, 6, 1], '海外 西班牙': [6914, 48, 42, 1310, 253, 436, 133, 176, 20, 135, 3, 62, 8, 1, 12, 4, 0, 0], '湖南 郴州': [49369, 317, 409, 8694, 959, 1338, 916, 700, 56, 128, 26, 142, 39, 21, 61, 18, 0, 1], '上海 宝山区': [64496, 378, 514, 10320, 1586, 2596, 1114, 1067, 87, 255, 40, 220, 74, 22, 115, 35, 6, 3], '重庆 荣昌县': [9868, 80, 87, 2282, 214, 372, 206, 105, 14, 33, 6, 24, 8, 3, 15, 6, 0, 0], '贵州 铜仁': [42945, 307, 491, 9762, 914, 1370, 1008, 521, 60, 126, 35, 157, 35, 22, 179, 9, 0, 0], '四川 攀枝花': [24736, 200, 234, 4786, 596, 830, 517, 264, 39, 67, 21, 90, 24, 16, 34, 7, 0, 0], '辽宁 锦州': [46818, 334, 418, 9633, 1079, 1517, 960, 700, 54, 181, 30, 130, 30, 14, 156, 16, 2, 2], '云南 西双版纳': [28622, 205, 333, 6184, 626, 946, 606, 318, 48, 90, 17, 105, 19, 8, 57, 13, 2, 1], '青海': [62298, 350, 501, 11593, 3190, 1562, 1166, 569, 53, 139, 28, 199, 22, 13, 435, 23, 1, 0], '重庆 酉阳土家族苗族自治县': [8856, 76, 94, 2112, 201, 302, 222, 86, 68, 23, 12, 30, 6, 5, 12, 7, 0, 1], '上海 闸北区': [58462, 389, 520, 9813, 1554, 2320, 1113, 905, 86, 173, 42, 250, 58, 27, 65, 28, 4, 1], '海外 泰国': [100712, 644, 300, 8436, 775, 4410, 1400, 475, 52, 109, 17, 109, 28, 6, 42, 11, 3, 1], '湖北 天门': [6276, 35, 37, 1788, 124, 164, 130, 77, 8, 20, 2, 37, 4, 2, 135, 2, 0, 0], '安徽 铜陵': [31174, 226, 303, 6678, 839, 930, 673, 409, 47, 99, 31, 174, 28, 7, 921, 16, 6, 0], '黑龙江 齐齐哈尔': [62444, 321, 476, 11053, 1164, 1768, 1121, 739, 67, 201, 40, 201, 64, 19, 269, 29, 2, 2], '吉林 四平': [56821, 424, 523, 11804, 1166, 1653, 1220, 606, 57, 175, 33, 180, 49, 18, 385, 21, 3, 0], '山西 大同': [54777, 387, 538, 10646, 1067, 1547, 1032, 664, 99, 190, 39, 166, 75, 17, 486, 23, 3, 5], '甘肃 金昌': [41424, 295, 499, 8021, 769, 1078, 811, 385, 56, 98, 25, 127, 16, 11, 85, 8, 0, 2], '内蒙古 兴安盟': [30851, 248, 332, 7255, 685, 971, 752, 347, 39, 97, 40, 119, 29, 8, 130, 17, 1, 1], '新疆 石河子': [6058, 50, 45, 2054, 172, 259, 151, 135, 10, 30, 22, 23, 9, 7, 10, 5, 1, 0], '四川 遂宁': [27111, 179, 240, 6261, 586, 988, 609, 363, 40, 87, 20, 114, 28, 16, 45, 10, 0, 0], '内蒙古 赤峰': [55301, 365, 446, 10592, 987, 1454, 1056, 585, 52, 309, 31, 127, 33, 16, 74, 19, 1, 1], '黑龙江 大兴安岭': [24997, 214, 299, 5933, 564, 790, 574, 258, 41, 84, 21, 80, 6, 8, 43, 9, 1, 0], '西藏 山南': [42087, 285, 473, 9628, 847, 1217, 825, 409, 63, 85, 24, 150, 19, 9, 168, 11, 0, 1], '山西 晋中': [53068, 346, 478, 10192, 1073, 1514, 1166, 603, 70, 178, 40, 163, 45, 16, 88, 22, 2, 1], '新疆 阿克苏': [24459, 154, 286, 5495, 583, 767, 484, 267, 48, 86, 12, 93, 14, 6, 78, 8, 1, 1], '天津 南开区': [69455, 434, 540, 10048, 1415, 2383, 1173, 1080, 103, 202, 47, 215, 78, 25, 92, 37, 3, 1], '重庆 璧山县': [9666, 78, 77, 2200, 217, 323, 201, 127, 16, 27, 15, 31, 4, 1, 17, 2, 0, 1], '广西 梧州': [43419, 677, 416, 8246, 873, 1298, 886, 529, 41, 156, 29, 118, 56, 11, 72, 14, 2, 1], '重庆 梁平县': [8795, 79, 91, 2070, 178, 291, 212, 99, 15, 31, 2, 31, 11, 3, 10, 3, 0, 0], '台湾 高雄市': [92910, 692, 1211, 18359, 1893, 3081, 1945, 1099, 126, 242, 65, 255, 56, 39, 158, 25, 3, 2], '广东 汕尾': [73967, 541, 676, 13285, 1264, 2022, 1515, 876, 70, 235, 32, 211, 51, 10, 114, 7, 2, 3], '海南': [78761, 448, 662, 14888, 1702, 2196, 1417, 791, 93, 211, 39, 339, 43, 18, 1209, 33, 3, 0], '重庆 忠县': [9290, 74, 109, 2030, 178, 315, 200, 97, 15, 35, 8, 30, 4, 3, 16, 0, 1, 0], '云南 丽江': [37117, 222, 280, 7345, 807, 1070, 686, 426, 58, 93, 35, 99, 30, 9, 402, 10, 1, 0], '内蒙古 阿拉善盟': [26435, 179, 319, 6065, 556, 784, 524, 279, 37, 74, 15, 92, 17, 9, 48, 10, 0, 1], '甘肃 临夏': [23488, 186, 283, 5464, 530, 691, 513, 249, 60, 55, 21, 87, 15, 7, 369, 8, 2, 0], '重庆 长寿区': [10436, 63, 128, 2371, 212, 404, 221, 165, 17, 45, 6, 37, 11, 5, 68, 4, 1, 0], '湖南 怀化': [42858, 325, 406, 8478, 924, 1417, 860, 696, 61, 147, 34, 160, 43, 11, 117, 12, 2, 1], '四川 广元': [32232, 197, 244, 5329, 632, 848, 565, 341, 32, 117, 8, 97, 20, 8, 45, 7, 2, 2], '天津 大港区': [21967, 166, 216, 4969, 494, 752, 486, 283, 24, 74, 13, 86, 16, 2, 25, 4, 0, 2], '甘肃 张掖': [25232, 233, 302, 6208, 563, 825, 589, 316, 33, 85, 26, 94, 10, 10, 43, 7, 1, 1], '重庆 云阳县': [9312, 70, 109, 2115, 208, 299, 213, 138, 8, 21, 8, 24, 8, 1, 20, 2, 0, 0], '新疆 和田': [20945, 164, 291, 5201, 438, 658, 440, 230, 25, 65, 15, 80, 15, 9, 37, 5, 1, 0], '四川 眉山': [27555, 195, 260, 5466, 605, 895, 604, 312, 41, 97, 12, 81, 28, 4, 32, 16, 0, 0], '重庆 彭水苗族土家族自治县': [8997, 62, 101, 2101, 182, 272, 211, 124, 9, 20, 4, 21, 7, 3, 12, 2, 1, 0], '黑龙江 鸡西': [50251, 262, 354, 8323, 827, 1163, 826, 421, 48, 114, 27, 117, 25, 18, 116, 11, 1, 1], '甘肃 平凉': [29955, 225, 278, 6135, 627, 848, 646, 301, 36, 74, 29, 107, 14, 8, 148, 6, 1, 1], '四川 资阳': [28370, 198, 251, 5039, 569, 841, 525, 337, 38, 80, 12, 77, 25, 6, 87, 11, 1, 1], '澳门 氹仔': [4171, 35, 31, 1675, 87, 166, 73, 40, 16, 13, 3, 13, 1, 4, 2, 2, 1, 0], '香港 离岛区': [53693, 309, 146, 4997, 444, 388, 415, 413, 14, 55, 3, 110, 1, 1, 1513, 7, 0, 0], '海外 瑞典': [3956, 17, 46, 772, 125, 231, 83, 92, 21, 26, 6, 43, 2, 0, 8, 3, 0, 1], '四川 自贡': [29263, 226, 259, 5561, 667, 1055, 610, 439, 33, 96, 24, 94, 34, 11, 36, 13, 0, 1], '陕西 延安': [42821, 320, 433, 9345, 984, 1233, 889, 539, 71, 132, 28, 123, 39, 13, 141, 12, 1, 1], '安徽 淮南': [45775, 331, 398, 8903, 1293, 1457, 984, 623, 45, 149, 24, 258, 46, 15, 76, 24, 1, 0], '青海 海北': [41214, 292, 494, 9479, 816, 1204, 831, 425, 61, 110, 22, 150, 23, 14, 141, 10, 1, 0], '台湾 彰化县': [5069, 35, 19, 1279, 102, 78, 90, 56, 8, 12, 2, 20, 0, 1, 197, 0, 0, 0], '海外 越南': [19968, 117, 231, 4345, 480, 728, 451, 298, 38, 47, 14, 89, 14, 13, 30, 2, 0, 0], '云南 楚雄': [25724, 197, 267, 5639, 557, 783, 534, 308, 38, 80, 21, 102, 22, 6, 113, 14, 0, 1], '海外 菲律宾': [19311, 134, 232, 3835, 433, 654, 430, 237, 85, 60, 8, 82, 7, 5, 33, 2, 2, 0], '海外 印尼': [20612, 139, 232, 4287, 434, 698, 413, 223, 21, 65, 14, 70, 16, 6, 39, 6, 0, 0], '海外 挪威': [5500, 34, 22, 3935, 135, 226, 332, 116, 12, 21, 2, 49, 6, 0, 10, 4, 1, 0], '西藏 日喀则': [42807, 310, 502, 10299, 978, 1271, 962, 486, 67, 120, 35, 157, 24, 17, 76, 7, 2, 0], '天津 汉沽区': [17424, 142, 229, 4171, 378, 555, 393, 176, 36, 46, 15, 66, 11, 8, 31, 3, 2, 0], '台湾 新北市': [5635, 14, 29, 1195, 82, 214, 95, 74, 7, 18, 5, 9, 5, 1, 3, 0, 0, 0], '海外 匈牙利': [1223, 9, 14, 438, 62, 82, 16, 28, 1, 10, 1, 18, 4, 2, 3, 1, 0, 0], '重庆 巫山县': [5837, 54, 73, 1481, 103, 181, 123, 78, 10, 12, 3, 15, 7, 0, 11, 2, 0, 0], '重庆 奉节县': [11687, 87, 149, 2236, 238, 316, 215, 143, 13, 25, 7, 30, 3, 5, 23, 2, 1, 0], '台湾 南投县': [7759, 26, 26, 1009, 96, 85, 85, 38, 9, 14, 2, 10, 1, 1, 95, 2, 0, 0], '重庆 大渡口区': [18203, 100, 151, 3408, 367, 581, 335, 196, 20, 49, 17, 68, 21, 5, 19, 10, 0, 0], '海外 土耳其': [6789, 9, 14, 457, 82, 134, 30, 40, 1, 12, 3, 33, 2, 4, 5, 0, 0, 0], '海外 希腊': [4204, 32, 18, 884, 128, 266, 64, 104, 5, 16, 4, 51, 7, 1, 6, 2, 0, 1], '河南 驻马店': [40340, 251, 350, 7912, 879, 1216, 804, 534, 57, 152, 26, 119, 37, 15, 75, 15, 1, 1], '云南 普洱': [28164, 199, 256, 6245, 534, 851, 629, 309, 37, 99, 13, 66, 27, 12, 67, 12, 2, 2], '重庆 北碚区': [25250, 119, 351, 10138, 474, 694, 1159, 351, 22, 72, 15, 106, 23, 3, 33, 15, 51, 11], '黑龙江 双鸭山': [38485, 267, 326, 7535, 710, 1069, 768, 370, 51, 92, 21, 120, 26, 6, 96, 8, 1, 0], '海外 乌克兰': [1298, 7, 5, 457, 71, 79, 24, 28, 6, 15, 0, 32, 1, 1, 1, 1, 0, 0], '内蒙古 乌兰察布市': [29080, 226, 341, 6921, 605, 885, 643, 303, 58, 113, 18, 104, 15, 9, 332, 17, 1, 1], '内蒙古': [74319, 480, 650, 15594, 1733, 2156, 1573, 905, 93, 266, 42, 308, 38, 19, 424, 24, 1, 1], '海外 意大利': [10870, 64, 52, 1924, 245, 730, 171, 233, 16, 49, 7, 59, 15, 3, 18, 8, 0, 1], '海外 爱尔兰': [5784, 25, 31, 1043, 201, 257, 115, 137, 10, 44, 3, 48, 9, 7, 4, 6, 0, 0], '海外 沙特阿拉伯': [4671, 32, 38, 851, 211, 368, 95, 144, 18, 27, 3, 57, 8, 4, 10, 8, 1, 1], '海外 印度': [18881, 145, 300, 4302, 486, 646, 412, 270, 35, 59, 19, 80, 14, 11, 40, 8, 0, 0], '河南 济源': [5724, 32, 42, 1581, 111, 129, 108, 84, 8, 15, 1, 27, 12, 3, 11, 4, 1, 0], '香港 北区': [2503, 16, 13, 741, 37, 88, 28, 26, 14, 5, 0, 10, 0, 1, 3, 1, 0, 0], '湖北 仙桃': [7708, 61, 57, 1945, 170, 224, 159, 110, 4, 27, 9, 34, 14, 0, 31, 1, 0, 0], '重庆 潼南县': [9851, 97, 114, 2110, 202, 308, 193, 99, 14, 30, 6, 29, 4, 4, 19, 4, 0, 0], '海外 埃及': [2207, 14, 16, 657, 107, 210, 35, 42, 5, 25, 3, 37, 5, 0, 4, 1, 0, 0], '重庆 永川区': [14139, 92, 156, 2895, 301, 495, 320, 245, 22, 43, 8, 40, 11, 8, 15, 3, 1, 1], '云南 昭通': [25546, 215, 355, 5641, 565, 924, 546, 312, 32, 86, 15, 94, 23, 9, 35, 10, 1, 1], '河北 承德': [47791, 344, 533, 10300, 1046, 1445, 1022, 697, 71, 164, 29, 149, 40, 21, 151, 24, 5, 2], '湖北 神农架': [5535, 55, 35, 2037, 110, 119, 121, 95, 7, 10, 2, 19, 4, 0, 11, 3, 0, 0], '重庆 城口县': [7820, 66, 83, 1887, 147, 253, 146, 94, 12, 29, 9, 27, 8, 1, 13, 1, 0, 0], '海外 哥伦比亚': [1360, 8, 9, 543, 141, 60, 26, 34, 10, 14, 0, 23, 0, 1, 3, 3, 0, 0], '海外 丹麦': [3471, 18, 26, 761, 135, 181, 74, 90, 12, 19, 3, 30, 2, 1, 11, 4, 0, 0], '新疆 阿勒泰': [21060, 148, 264, 5057, 470, 776, 439, 270, 276, 56, 24, 120, 14, 7, 104, 7, 0, 0], '湖北 黄石': [44434, 316, 427, 8652, 967, 1303, 975, 686, 52, 144, 22, 130, 42, 19, 117, 33, 6, 2], '台湾 新竹县': [3492, 58, 23, 1091, 80, 75, 85, 174, 11, 16, 0, 21, 1, 0, 18, 0, 0, 0], '重庆 武隆县': [8683, 81, 83, 1938, 189, 288, 214, 87, 5, 19, 4, 23, 4, 4, 10, 5, 0, 0], '海外 新西兰': [15620, 69, 75, 1626, 303, 644, 236, 233, 19, 54, 7, 65, 20, 8, 25, 11, 1, 0], '北京 延庆县': [21219, 127, 232, 4565, 473, 669, 446, 236, 33, 50, 14, 84, 14, 13, 31, 11, 1, 1], '重庆 垫江县': [8757, 75, 101, 1898, 192, 308, 189, 99, 14, 30, 5, 26, 5, 1, 16, 2, 0, 0], '香港 观塘区': [3554, 23, 25, 983, 66, 192, 61, 37, 6, 8, 7, 7, 4, 2, 6, 1, 0, 0], '新疆 喀什': [26245, 157, 289, 5429, 493, 774, 522, 277, 45, 74, 17, 73, 23, 10, 1046, 4, 1, 1], '重庆 丰都县': [9555, 63, 109, 1956, 186, 311, 191, 101, 11, 40, 4, 23, 4, 4, 7, 3, 1, 0], '四川 广安': [27966, 215, 262, 5415, 526, 844, 578, 354, 43, 108, 15, 80, 26, 6, 167, 9, 0, 1], '宁夏 中卫': [7159, 46, 39, 2624, 184, 166, 126, 63, 7, 24, 3, 34, 12, 2, 8, 3, 0, 0], '天津 保税区': [3771, 42, 29, 1485, 69, 59, 70, 38, 1, 10, 2, 9, 2, 0, 8, 2, 0, 0], '天津 宁河县': [17887, 152, 208, 4148, 378, 606, 389, 206, 84, 74, 15, 49, 12, 3, 29, 2, 0, 0], '重庆 铜梁县': [9730, 172, 117, 2235, 217, 356, 201, 110, 17, 26, 7, 31, 7, 2, 16, 1, 0, 0], '广西 崇左': [5796, 44, 49, 1721, 131, 144, 116, 70, 8, 21, 0, 28, 9, 0, 9, 0, 0, 0], '四川 巴中': [23204, 173, 234, 4807, 540, 756, 519, 331, 70, 69, 21, 56, 28, 9, 31, 10, 2, 0], '重庆 开县': [10442, 90, 118, 2392, 226, 382, 249, 152, 14, 50, 7, 28, 7, 3, 14, 2, 0, 0], '海外 芬兰': [2749, 16, 30, 610, 132, 193, 60, 99, 11, 21, 1, 37, 7, 2, 5, 2, 0, 0], '甘肃': [82808, 432, 649, 14156, 1493, 1946, 1346, 1196, 86, 239, 35, 265, 40, 20, 1078, 42, 3, 0], '海外 墨西哥': [824, 9, 1, 385, 63, 49, 23, 12, 5, 3, 0, 21, 0, 1, 4, 0, 0, 0], '重庆 南川区': [9916, 84, 90, 2041, 173, 333, 199, 152, 9, 25, 5, 27, 6, 4, 20, 3, 0, 0], '台湾 基隆市': [2957, 22, 14, 889, 75, 109, 71, 50, 1, 3, 1, 10, 4, 0, 1, 0, 0, 0], '台湾 新竹市': [3698, 37, 22, 988, 105, 111, 68, 41, 8, 8, 2, 7, 2, 1, 5, 1, 0, 2], '海外 比利时': [2346, 13, 18, 537, 110, 146, 31, 42, 6, 25, 3, 28, 6, 7, 7, 5, 0, 0], '海外 阿根廷': [1806, 8, 8, 487, 80, 127, 37, 50, 4, 18, 3, 40, 3, 0, 3, 0, 0, 0], '海外 南非': [1268, 13, 10, 507, 76, 72, 33, 25, 2, 2, 0, 40, 0, 1, 2, 0, 0, 0], '香港 西贡区': [3237, 4, 12, 742, 45, 116, 40, 35, 6, 8, 1, 4, 2, 0, 2, 4, 0, 0], '香港 深水埗区': [3527, 16, 19, 969, 50, 73, 41, 19, 6, 11, 1, 6, 0, 0, 103, 2, 0, 0], '香港 黄大仙区': [4542, 15, 21, 862, 52, 94, 43, 29, 13, 14, 1, 17, 3, 0, 4, 0, 0, 1], '澳门 大堂区': [2542, 26, 18, 1690, 60, 71, 63, 15, 13, 6, 1, 3, 1, 0, 2, 0, 1, 0], '湖北 潜江': [8646, 41, 47, 1836, 131, 196, 124, 75, 6, 18, 1, 22, 4, 5, 74, 2, 0, 0], '台湾 台中县': [4312, 30, 34, 1125, 68, 66, 67, 65, 4, 15, 0, 8, 1, 0, 517, 1, 0, 0], '重庆 秀山土家族苗族自治县': [8708, 72, 121, 2059, 172, 258, 192, 104, 17, 28, 10, 25, 2, 3, 11, 0, 1, 1], '重庆 巫溪县': [8271, 82, 92, 1891, 176, 251, 173, 95, 15, 33, 4, 35, 5, 2, 11, 2, 0, 0], '重庆 万盛区': [12022, 60, 92, 2076, 195, 271, 207, 106, 19, 25, 6, 39, 7, 1, 22, 2, 0, 0], '澳门 风顺堂区': [2487, 27, 16, 1493, 57, 58, 39, 35, 19, 1, 2, 3, 4, 0, 4, 1, 4, 0], '澳门 路环': [2264, 15, 3, 1383, 66, 39, 37, 11, 11, 3, 1, 5, 0, 2, 2, 0, 0, 0], '香港 屯门区': [2321, 22, 6, 801, 42, 90, 51, 31, 8, 8, 0, 5, 2, 0, 5, 2, 0, 0], '香港 元朗区': [3554, 20, 12, 906, 56, 170, 76, 41, 6, 7, 1, 5, 6, 0, 81, 1, 1, 0], '台湾 花莲县': [1213, 5, 9, 510, 57, 74, 37, 14, 3, 3, 0, 3, 0, 0, 0, 0, 0, 0], '香港 荃湾区': [2532, 11, 11, 710, 42, 103, 37, 24, 3, 11, 1, 10, 1, 1, 4, 3, 0, 0], '海外 奥地利': [2360, 16, 14, 560, 94, 133, 50, 47, 5, 15, 2, 38, 3, 1, 5, 1, 0, 0], '海外 伊朗': [1166, 5, 14, 394, 93, 76, 16, 28, 4, 5, 0, 30, 1, 1, 0, 0, 0, 0], '台湾 桃园县': [3358, 6, 22, 897, 72, 107, 58, 68, 5, 8, 0, 11, 8, 0, 2, 1, 0, 0], '海外 白俄罗斯': [1465, 8, 21, 463, 70, 45, 10, 30, 3, 17, 0, 26, 1, 0, 1, 0, 0, 0], '台湾 屏东县': [1565, 9, 4, 586, 32, 33, 26, 19, 2, 4, 1, 6, 0, 0, 0, 0, 0, 0], '香港 大埔区': [1558, 17, 12, 587, 28, 64, 33, 33, 4, 5, 4, 7, 2, 1, 0, 1, 0, 0], '香港 葵青区': [2732, 9, 11, 674, 32, 68, 36, 34, 2, 7, 1, 1, 2, 0, 2, 1, 0, 0], '台湾 嘉义县': [1279, 5, 4, 663, 29, 28, 19, 11, 2, 0, 1, 3, 1, 0, 1, 0, 0, 0], '海外 葡萄牙': [1192, 5, 5, 445, 72, 80, 17, 36, 5, 21, 0, 30, 3, 0, 2, 0, 0, 0], '香港 南区': [1918, 12, 17, 728, 55, 73, 43, 29, 8, 9, 2, 3, 2, 0, 4, 0, 0, 0], '澳门 望德堂区': [2138, 15, 10, 1456, 50, 36, 39, 18, 7, 4, 1, 1, 0, 0, 3, 0, 0, 0], '台湾 高雄县': [1285, 7, 7, 631, 19, 21, 22, 16, 2, 4, 0, 1, 0, 0, 0, 0, 1, 0], '澳门 圣安多尼堂区': [2813, 27, 11, 1390, 61, 82, 62, 35, 16, 8, 1, 4, 2, 0, 4, 2, 0, 0], '台湾 宜兰县': [1391, 6, 8, 588, 32, 41, 27, 10, 0, 3, 3, 4, 3, 0, 1, 2, 1, 0], '台湾 苗栗县': [10642, 57, 23, 1005, 85, 68, 81, 174, 9, 16, 0, 15, 2, 0, 135, 1, 1, 0], '海外 古巴': [1410, 8, 17, 454, 115, 113, 32, 52, 5, 18, 0, 35, 2, 1, 1, 3, 0, 0], '海外 波兰': [1492, 11, 6, 362, 65, 61, 27, 32, 3, 23, 0, 28, 0, 0, 0, 0, 0, 0], '台湾 云林县': [1214, 16, 4, 651, 32, 23, 14, 6, 4, 6, 1, 3, 2, 1, 0, 0, 0, 0], '台湾 台南县': [1007, 11, 6, 596, 28, 30, 17, 14, 5, 3, 0, 1, 1, 0, 2, 0, 0, 0], '台湾 澎湖县': [5624, 40, 21, 1036, 83, 54, 81, 25, 4, 13, 1, 16, 0, 0, 281, 0, 0, 0], '': [202, 1, 0, 48, 3, 11, 4, 9, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0]}
+    province_list = ['北京', '天津', '内蒙古', '新疆', '河北', '甘肃', '宁夏', '山西', '陕西', '青海', '山东', '河南', '安徽', '辽宁', '吉林', '黑龙江', '江苏',
+                 '浙江', '上海', '湖北', '湖南', '四川', '重庆', '贵州', '云南', '广西', '江西', '福建', '广东', '海南', '西藏']
+    keyword_province = province_dic(province_list,keyword_location)
+    keyword_location_emotion = read_keyword_location_emotion(keyword_location_emotion_file)
+    keyword_province_emotion_dic = keyword_province_emotion(province_list,keyword_location_emotion)
+    # print(keyword_province_emotion_dic)
+    dreamvector_dic = generate_dreamvector(keyword_list,province_list,keyword_province,emotion_list,keyword_province_emotion_dic)
 
-    #echarts zscore 折 百分比混合图数据
-    line_pie_chart_data(keyword_location)
+    dreamvector_percent_dic = dreamvector_dic_topercent(province_list,emotion_list,dreamvector_dic)
 
-    # get_echartsdata(percent_output)
+    columns_name = []
+    for current_province in province_list:
+        columns_name.append(current_province)
+    for current_emotion in emotion_list:
+        columns_name.append(current_emotion)
+
+    #dreamvector [省1，省2，...,省31,情感0,情感1,情感3,情感4,情感5]
+    dreamvector_dataframe = pd.DataFrame.from_dict(dreamvector_percent_dic, orient='index',columns = columns_name)
+    # print(dreamvector_dataframe)
 
 
-    # #全省地图
-    # keyword_map = province_map_echarts(keyword_location)
-    # output_map = stand_output(keyword_map)
-    # print('___')
-    # print(output_map)
+    # 不需要列标准化
+    #列标准化的梦向量
+    # dreamvector_dataframe_standardized = dreamvector_dataframe.apply(lambda x: (x-np.mean(x))/np.std(x,ddof=1))
+    # print(dreamvector_dataframe_standardized)
 
-    # for keyword, keyword_dic in keyword_map.items():
-    #     print(keyword)
-    #     print(keyword_map)
-    #     print('_________')
+    ## Parallel Coordinate
+    # draw_parallel_coordinate(dreamvector_dataframe_standardized)
+    ch_list = []
+    x_list = []
+    temp_n = 1
+    xticks_list = []
+    for i in range(2,16):
+        print(i)
+        # imple_kmeans(dreamvector_dataframe,i+1)
+        current_ch = imple_SpectralClustering(dreamvector_dataframe,i+1)
+        x_list.append(i+1)
+        ch_list.append(current_ch)
+        xticks_list.append(temp_n)
+        temp_n+=1
+
+    plt.plot(xticks_list, ch_list)
+    plt.xticks(xticks_list, x_list)
+    plt.title('calinski harabaz score')
+    plt.xlabel('类目数')
+    plt.show()
