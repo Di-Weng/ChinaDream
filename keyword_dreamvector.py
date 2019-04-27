@@ -141,6 +141,7 @@ def imple_kmeans(dreamvector_dataframe,k):
     # show_tsne(r,2,k)
     # show_tsne(r,3,k)
     # draw_parallel_coordinate(r,k)
+    return ch_index
 
 def imple_GMM(dreamvector_dataframe,k):
     model = GaussianMixture(n_components=k)  # 分为k类，并发数4
@@ -167,9 +168,8 @@ def imple_SpectralClustering(dreamvector_dataframe,k):
 
     # 详细输出原始数据及其类别
     dreamvector_dataframe['聚类类别'] = labels
-    print(labels)
     ch_index = calinski_harabaz_score(dreamvector_dataframe.iloc[:,0:-1], labels)
-    print(str(k)+' class calinski_harabaz_score:' +str(ch_index))
+    print(str(k) + ' class calinski_harabaz_score:' +str(ch_index))
     show_pca(dreamvector_dataframe,2,k)
     show_pca(dreamvector_dataframe,3,k)
     show_tsne(dreamvector_dataframe,2,k)
@@ -273,21 +273,29 @@ if __name__=='__main__':
     dreamvector_dataframe = pd.DataFrame.from_dict(dreamvector_percent_dic, orient='index',columns = columns_name)
     # print(dreamvector_dataframe)
 
+
+    # 不需要列标准化
     #列标准化的梦向量
-    dreamvector_dataframe_standardized = dreamvector_dataframe.apply(lambda x: (x-np.mean(x))/np.std(x,ddof=1))
+    # dreamvector_dataframe_standardized = dreamvector_dataframe.apply(lambda x: (x-np.mean(x))/np.std(x,ddof=1))
     # print(dreamvector_dataframe_standardized)
 
     ## Parallel Coordinate
     # draw_parallel_coordinate(dreamvector_dataframe_standardized)
     ch_list = []
+    x_list = []
+    temp_n = 1
+    xticks_list = []
     for i in range(2,16):
-        print(i)
-        # imple_kmeans(dreamvector_dataframe_standardized,i+1)
-        current_ch = imple_SpectralClustering(dreamvector_dataframe_standardized,i+1)
+        # current_ch = imple_kmeans(dreamvector_dataframe,i+1)
+        current_ch = imple_SpectralClustering(dreamvector_dataframe,i+1)
+        x_list.append(i+1)
         ch_list.append(current_ch)
+        xticks_list.append(temp_n)
+        temp_n+=1
 
-    sns.set(style="white", palette="muted", color_codes=True)  # set( )设置主题，调色板更常用
-    plt.plot(ch_list)
+    plt.plot(xticks_list, ch_list)
+    plt.xticks(xticks_list, x_list)
     plt.title('calinski harabaz score')
     plt.xlabel('类目数')
     plt.show()
+    plt.savefig('result/dreamvector/ch_score.jpg')

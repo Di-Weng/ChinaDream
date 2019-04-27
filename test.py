@@ -1,7 +1,3 @@
-#coding:utf-8
-import topic_cla
-import chardet   #需要导入这个模块，检测编码格式
-s = input('input:')
-while s!='#':
-    print (topic_cla.predict(s))
-    s= input('input:')
+str = "//恭喜这3位同学获得fitbit健康手环一个（颜色随机），请私信小编你们的联系方式，//姓名和快递地址，我们很快安排工作人员派发奖品哦，再次感谢大家参与活动~"
+sub = "//"
+print (str.count(sub))

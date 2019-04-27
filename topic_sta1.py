@@ -25,6 +25,8 @@ from collections import defaultdict
 import gc
 from random import randint
 import linecache
+from math import sqrt
+import fcntl
 
 # the uppest path of weibo data document
 weibofilefolder = '/Volumes/data/chinadream/data'
@@ -34,7 +36,7 @@ south_city = ['江苏','浙江','上海','湖北','湖南','四川','重庆','�
 def getAllFile(folderpath):
     temp_list = []
     folderlist = os.listdir(folderpath)
-    temp_list = [weibofilefolder + '/' + filename + '/' + filename for filename in folderlist]
+    temp_list = [folderpath + '/' + filename + '/' + filename for filename in folderlist if filename != '.DS_Store']
     return temp_list
 
 
@@ -79,6 +81,16 @@ def getMood(line_section):
         return temp_dic['mood']
     elif(type(line_section) == dict):
         return(line_section['mood'])
+    else:
+        print('type error')
+
+def getisSpam(line_section):
+    if(type(line_section) == list):
+        temp_dic_str = line_section[-1].strip()
+        temp_dic = json.loads(temp_dic_str)
+        return temp_dic['is_spam']
+    elif(type(line_section) == dict):
+        return(line_section['is_spam'])
     else:
         print('type error')
 
@@ -604,6 +616,163 @@ def keyword_location_lda(mongo_server = '127.0.0.1'):
             # output_file.write('\n')
     return
 
+# 某年某个中国梦的所有情感(默认)下的 关于市（直辖市的区）级的LDA
+def year_keyword_location_lda(current_year,current_keyword,mood_list = 'all'):
+    jieba.load_userdict("data/user_dict.txt")
+    stop_word = []
+
+    with open('data/stop_word.txt', 'r', encoding='utf-8') as sw_f:
+        for item in sw_f:
+            stop_word.append(item.strip())
+    current_keyword_cut_list = current_keyword.split(',')
+    current_keyword_banned_list = []
+    # 全切
+    for temp1 in current_keyword_cut_list:
+        cut_list = jieba.cut(temp1)
+        for temp2 in cut_list:
+            current_keyword_banned_list.append(temp2)
+
+    time_keyword_folder = '/Volumes/data/chinadream/time_keyword_emotion_location'
+    timemonth_list = os.listdir(time_keyword_folder)
+    current_year_timemonth_list = []
+    for current_timemonth in timemonth_list:
+        if(current_timemonth[0:4] == str(current_year)):
+            current_year_timemonth_list.append(current_timemonth)
+
+    corpus_text = []
+    corpus_city = {}
+    count = 0
+    print('开始抽取语料')
+    for current_timemonth in current_year_timemonth_list:
+        if(mood_list == 'all'):
+            current_mood_path = time_keyword_folder+'/'+current_timemonth
+            current_mood_list = os.listdir(current_mood_path)
+            for current_mood in current_mood_list:
+                if(current_mood == '.DS_Store'):
+                    continue
+                current_folder_keyword_list = os.listdir(current_mood_path + '/' + str(current_mood))
+                if(current_keyword not in current_folder_keyword_list):
+                    continue
+
+                current_city_path = current_mood_path + '/' + str(current_mood) + '/' + current_keyword
+                current_city_list = os.listdir(current_city_path)
+
+                for current_city in current_city_list:
+                    if(current_city == '.DS_Store'):
+                        continue
+                    if(current_city in corpus_city):
+                        city_index = corpus_city[current_city]
+                        origin_text = corpus_text[city_index]
+                    else:
+                        origin_text = []
+
+                    current_city_file_path = current_city_path + '/' +current_city
+                    for temp_line in open(current_city_file_path):
+                        weibo_origin = filer.filer(temp_line).replace('/', '')
+                        if (len(weibo_origin) == 0):
+                            continue
+                        weibo_cut = list(jieba.cut(weibo_origin))
+                        weibo_cut_list = []
+                        for items in weibo_cut:
+                            if (items not in stop_word and len(items.strip()) > 0):
+                                if (items in current_keyword_banned_list):
+                                    continue
+                                weibo_cut_list.append(items)
+                        if (len(weibo_cut_list) < 5):
+                            continue
+                        for current_cut in weibo_cut_list:
+                            origin_text.append(current_cut)
+                    # 该城市没有符合条件的预料被抽取
+                    if (len(origin_text) == 0):
+                        continue
+                    if (current_city in corpus_city):
+                        # 更新语料
+                        corpus_text[city_index] = origin_text
+                    else:
+                        #添加语料，更新index
+                        corpus_text.append(origin_text)
+                        corpus_city[current_city] = count
+                        count += 1
+    #释放内存
+    del origin_text
+    gc.collect()
+
+    frequency = defaultdict(int)
+    for city_file in corpus_text:
+        for token in city_file:
+            frequency[token] += 1
+    texts = [[token for token in text if frequency[token] > 3]
+             for text in corpus_text]
+
+    word_count_dict = corpora.Dictionary(texts)
+
+    corpus = [word_count_dict.doc2bow(text) for text in texts]
+    print('计算tfidf')
+    tfidf = TfidfModel(corpus)
+    corpus_tfidf = tfidf[corpus]
+
+    del tfidf
+    gc.collect()
+
+    print('开始LDA模型构建')
+    lda = LdaModel(corpus=corpus_tfidf, id2word=word_count_dict, num_topics=100)
+    output_model_folder = 'data/year_keyword_location_lda/model/' + str(current_year) + '_' + current_keyword + '_' + mood_list
+    if (not os.path.exists(output_model_folder)):
+        os.makedirs(output_model_folder)
+    model_file = output_model_folder + '/' + str(current_year) + '_' + current_keyword + '_' + mood_list  + '_lda.model'
+    dictionary_file = output_model_folder + '/' + str(current_year) + '_' + current_keyword + '_' + mood_list  + '_lda.dict'
+    corpus_file = output_model_folder + '/' + str(current_year) + '_' + current_keyword + '_' + mood_list  + '_lda.mm'
+    word_count_dict.save(dictionary_file)
+    corpora.MmCorpus.serialize(corpus_file,corpus)
+    lda.save(model_file)
+
+    # db = conntoMongoKeywordLocation_topic()
+    # current_collection = db[collection_name_1]
+    # data_toinsert = {
+    #     'topic_distri':'1',
+    #     'keyword': current_keyword,
+    #     'all_topic': str(lda.print_topics(-1))
+    # }
+    # result = current_collection.insert_one(data_toinsert)
+
+    # write to file
+    output_folder = 'result/year_keyword_location_lda/' + str(current_year) + '_' + current_keyword + '_' + mood_list
+    if (not os.path.exists(output_folder)):
+        os.makedirs(output_folder)
+
+    #默认20个话题
+    lda_topic_list = lda.print_topics()
+    with open(output_folder + '/lda_topics.txt', 'a+', encoding='utf-8') as output_file:
+        output_file.write(str(current_year) + '_' + current_keyword + '_' + mood_list)
+        output_file.write('\n')
+        for current_topic in lda_topic_list:
+            output_file.write(str(current_topic))
+            output_file.write('\n')
+
+    for city_name, city_index in corpus_city.items():
+        city_corpus = corpus[city_index]
+        doc_lda = lda.get_document_topics(city_corpus)  # 得到新文档的主题分布
+        # print(doc_lda)
+
+        # db = conntoMongoKeywordLocation()
+        # collection_name_1 = str(current_year) + '_' + current_keyword + '_' + mood_list
+        # current_collection = db[collection_name_1]
+        # data_toinsert = {
+        #     'city': city_name,
+        #     'topic_distribution': str(doc_lda)
+        # }
+        # result = current_collection.insert_one(data_toinsert)
+
+
+        with open(output_folder + '/city_topics.txt', 'a+', encoding='utf-8') as output_file:
+            output_city_name = city_name.split('.')[0]
+            output_file.write(output_city_name)
+            output_file.write('\n')
+            output_file.write(str(doc_lda))
+            output_file.write('\n')
+
+    return
+
 # weibofilefolder = '/Volumes/data/chinadream/data'
 # 按时间-中国梦维度-市（区）存储文件
 # 按中国梦维度-市(区)存储文件
@@ -659,6 +828,183 @@ def collect_city_file(file_path_list):
             e_t = time()
         print('current_file:' + current_file)
         print('current file process time: ' + str(e_t - s_t))
+
+# weibofilefolder = '/Volumes/data/chinadream/data'
+mood_list = ['愤怒','厌恶','高兴','悲伤','恐惧']
+# 按时间-中国梦维度-情感-市（区）存储文件
+# 按中国梦维度-情感-市(区)存储文件
+def collect_time_emotion_city_file(file_path_list):
+    ignore_region = ['其他','海外']
+    output_file_1 = '/Volumes/data/chinadream/keyword_emotion_location/'
+
+    for current_file in file_path_list:
+        line_count = 0
+        with open(current_file, 'r', encoding='utf-8') as f:
+            s_t = time()
+            f_t = 0
+            nf_t = 0
+            for line in f:
+                t_1 = time()
+                line_section = line.split('\t')
+                current_text = getText(line_section)
+                current_keyword_list = getKeywordList(line_section)
+                current_detailed_location = getLocation(line_section)
+                current_location_list = current_detailed_location.split()
+                current_mood = getMood(line_section)
+                if(len(str(current_mood)) == 0):
+                    continue
+
+                if(len(str(current_location_list)) == 0):
+                    continue
+                province = current_location_list[0]
+
+                if(province in ignore_region):
+                    continue
+                elif(province == '香港' or province == '澳门'):
+                    city = province
+                else:
+                    if(len(current_location_list) < 2):
+                        continue
+                    city = current_location_list[1]
+                line_count += 1
+                time_stamp = current_file.split('/')[-1].split('.')[0]
+                log_file = open('/Volumes/data/chinadream/log/' + time_stamp + '.txt', 'w+',encoding='utf-8')
+                log_file.write(str(line_count))
+                for current_keyword in current_keyword_list:
+                    current_out_path_1 = output_file_1 + str(current_mood) + '/' + current_keyword
+                    # print(current_out_path_1)
+                    if(not os.path.exists(current_out_path_1)):
+                        os.makedirs(current_out_path_1)
+
+                    keyword_location_file = open(current_out_path_1 + '/' + city + '.txt', 'a+', encoding='utf-8')
+                    keyword_location_file.write(current_text)
+                    keyword_location_file.write('\n')
+                    keyword_location_file.close()
+
+            e_t = time()
+        log_file.close()
+        print('current_file:' + current_file)
+        print('current file process time: ' + str(e_t - s_t))
+    return 1
+
+def multi_collect_time_emotion_city_file(current_file):
+    ignore_region = ['其他','海外']
+    output_file_2 = '/Volumes/data/chinadream/time_keyword_emotion_location/'
+    if(current_file=='.DS_Store'):
+        return 1
+    print(current_file)
+    line_count = 0
+    with open(current_file, 'r', encoding='utf-8') as f:
+        s_t = time()
+        for line in f:
+            line_section = line.split('\t')
+            current_text = getText(line_section)
+            current_keyword_list = getKeywordList(line_section)
+            current_detailed_location = getLocation(line_section)
+            current_location_list = current_detailed_location.split()
+            current_mood = getMood(line_section)
+            if(len(str(current_mood)) == 0):
+                continue
+
+            if(len(str(current_location_list)) == 0):
+                continue
+            province = current_location_list[0]
+
+            if(province in ignore_region):
+                continue
+            elif(province == '香港' or province == '澳门'):
+                city = province
+            else:
+                if(len(current_location_list) < 2):
+                    continue
+                city = current_location_list[1]
+
+            line_count += 1
+            time_stamp = current_file.split('/')[-1].split('.')[0]
+            log_file = open('/Volumes/data/chinadream/log/' + time_stamp + '.txt', 'w+', encoding='utf-8')
+            log_file.write(str(line_count))
+            for current_keyword in current_keyword_list:
+                if(current_keyword=='.DS_Store'):
+                    continue
+                temp1 = current_file.split('/')[-1]
+                temp2 = temp1.split('.')[0]
+                current_out_path_2_time = output_file_2 + temp2 + '/' + str(current_mood)
+                if(not os.path.exists(current_out_path_2_time)):
+                    os.makedirs(current_out_path_2_time)
+
+                current_out_path_2_time_keyword = current_out_path_2_time + '/' + current_keyword
+
+                if(not os.path.exists(current_out_path_2_time_keyword)):
+                    os.mkdir(current_out_path_2_time_keyword)
+                time_keyword_location_file = open(current_out_path_2_time_keyword + '/' + city + '.txt', 'a+', encoding='utf-8')
+                time_keyword_location_file.write(current_text)
+                time_keyword_location_file.write('\n')
+                time_keyword_location_file.close()
+        e_t = time()
+    print('current_file:' + current_file)
+    print('current file process time: ' + str(e_t - s_t))
+    return 1
+
+def multi_collect_time_emotion_city_file_nospam(current_file):
+    ignore_region = ['其他','海外']
+    output_file_2 = '/Volumes/data/chinadream/time_keyword_emotion_location_nospams/'
+    if(current_file=='.DS_Store'):
+        return 1
+    print(current_file)
+    line_count = 0
+    with open(current_file, 'r', encoding='utf-8') as f:
+        s_t = time()
+        for line in f:
+            line_section = line.split('\t')
+            current_text = getText(line_section)
+            current_isspam = getisSpam(line_section)
+            current_keyword_list = getKeywordList(line_section)
+            current_detailed_location = getLocation(line_section)
+            current_location_list = current_detailed_location.split()
+            current_mood = getMood(line_section)
+            if(len(str(current_mood)) == 0 ):
+                continue
+            if (current_isspam == 1):
+                continue
+
+            if(len(str(current_location_list)) == 0):
+                continue
+            province = current_location_list[0]
+
+            if(province in ignore_region):
+                continue
+            elif(province == '香港' or province == '澳门'):
+                city = province
+            else:
+                if(len(current_location_list) < 2):
+                    continue
+                city = current_location_list[1]
+
+            line_count += 1
+            time_stamp = current_file.split('/')[-1].split('.')[0]
+            log_file = open('/Volumes/data/chinadream/log_nospams/' + time_stamp + '.txt', 'w+', encoding='utf-8')
+            log_file.write(str(line_count))
+            for current_keyword in current_keyword_list:
+                if(current_keyword=='.DS_Store'):
+                    continue
+                temp1 = current_file.split('/')[-1]
+                temp2 = temp1.split('.')[0]
+                current_out_path_2_time = output_file_2 + temp2 + '/' + str(current_mood)
+                if(not os.path.exists(current_out_path_2_time)):
+                    os.makedirs(current_out_path_2_time)
+
+                current_out_path_2_time_keyword = current_out_path_2_time + '/' + current_keyword
+
+                if(not os.path.exists(current_out_path_2_time_keyword)):
+                    os.mkdir(current_out_path_2_time_keyword)
+                time_keyword_location_file = open(current_out_path_2_time_keyword + '/' + city + '.txt', 'a+', encoding='utf-8')
+                time_keyword_location_file.write(current_text)
+                time_keyword_location_file.write('\n')
+                time_keyword_location_file.close()
+        e_t = time()
+    print('current_file:' + current_file)
+    print('current file process time: ' + str(e_t - s_t))
+    return 1
 
 def statistic_keywordLocaiton_number():
     pass
@@ -821,6 +1167,49 @@ def keyword_emotion(file_paht_list):
             print('current file process time: ' + str(e_t - s_t))
             print(output_dic)
     return output_dic
+
+# output['at'] = [按照keyword顺序统计]
+# output['repost'] = [按照keyword顺序统计]
+# output['at_total'] = 所有微博数
+# output['repost_total'] = 所有微博数
+def keyword_mentionrepost(file_paht_list):
+    dismiss_count = 0
+    all_keywords_list = ['健康', '事业有成', '发展机会', '生活幸福', '有房', '出名', '家庭幸福', '好工作', '平等机会', '白手起家', '成为富人', '个体自由', '安享晚年',
+                     '收入足够', '个人努力', '祖国强大', '中国经济持续发展', '父辈更好']
+
+    output_dic = {}
+    output_dic['at'] = [0 for i in all_keywords_list]
+    output_dic['at_total'] = [0 for i in all_keywords_list]
+    output_dic['repost'] = [0 for i in all_keywords_list]
+    output_dic['repost_total'] = [0 for i in all_keywords_list]
+
+    print(output_dic)
+    for current_file in file_paht_list:
+        with open(current_file, 'r', encoding='utf-8') as f:
+            s_t = time()
+            for line in f:
+                line_section = line.split('\t')
+                location = getLocation(line_section)
+                keyword_list = getKeywordList(line_section)
+                current_text = getText(line_section)
+
+                current_text = filer.filer(current_text)
+                word_list = [word for word in jieba.cut(current_text)]
+                if (len(word_list) < 5):
+                    dismiss_count += 1
+                    continue
+                current_at = current_text.count('@')
+                current_repost = current_text.count('//')
+                for keyword in keyword_list:
+                    keyword = keyword.replace(',', '')
+                    output_dic['at'][all_keywords_list.index(keyword)] += current_at
+                    output_dic['at_total'][all_keywords_list.index(keyword)] += 1
+                    output_dic['repost'][all_keywords_list.index(keyword)] += current_repost
+                    output_dic['repost_total'][all_keywords_list.index(keyword)] += 1
+            e_t = time()
+        print(output_dic)
+        print('dismiss count: ' + str(dismiss_count))
+        print('current collection process time: ' + str(e_t - s_t))
 
 if __name__ == '__main__':
     # topic_keyword

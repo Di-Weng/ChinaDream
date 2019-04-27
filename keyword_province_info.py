@@ -279,11 +279,11 @@ def draw_distribution(dataframe_dic,itype):
             for temp in temp_list:
                 current_year_list.append(round(temp,1))
         print(current_year_list)
-        sns.distplot(current_year_list, hist=False,label=str(current_year))
+        sns.distplot(current_year_list, kde=False,label=str(current_year))
         # sns.distplot(current_year_list, norm_hist=True,rug=False,label=str(current_year))
 
     plt.legend()
-    plt.ylabel('密度')
+    plt.ylabel('频数')
     plt.xlabel('相关性')
     plt.title('相关性分布图')
     plt.savefig('result/中国梦与经济指标/' + '相关性分布图' + '.png', bbox_inches='tight')

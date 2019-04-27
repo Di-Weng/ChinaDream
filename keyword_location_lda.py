@@ -18,6 +18,7 @@ from gensim.corpora import Dictionary
 import matplotlib
 import codecs
 
+#将之前的结果dic(dic_out)和当前统计的dic(freq_item)合并
 def merege_iter(dic_out,freq_item):
     outdic = {}
     for keyword,keyword_count in dic_out.items():
@@ -93,7 +94,7 @@ def extract_word_freq(file_folder_path):
             outfile.close()
             # fd.plot(50,cumulative=True)
 
-def exec_shell_train():
+def exec_shell():
     wordFreq_file_path = 'data/location_wordfreq/'
     wordFreq_keyword_list = os.listdir(wordFreq_file_path)
     for current_keyword in wordFreq_keyword_list:
@@ -101,13 +102,6 @@ def exec_shell_train():
             continue
         print(current_keyword)
         shell_command = '/Users/diweng/github_project/plda/lda --num_topics 8 --alpha 0.1 --beta 0.01 --training_data_file /Users/diweng/github_project/ChinaDream/data/location_wordfreq/' + current_keyword + ' --model_file /Users/diweng/github_project/ChinaDream/data/location_wordfreq/lda_folder/' + current_keyword + '.txt --burn_in_iterations 100 --total_iterations 150'
-        os.system(shell_command)
-def exec_shell_view():
-    model_folder_path = 'data/location_wordfreq/lda_folder/'
-    model_file_list = os.listdir(model_folder_path)
-    for current_model in model_file_list:
-        shell_command = '/Users/diweng/github_project/plda/view_model.py /Users/diweng/github_project/ChinaDream/' + model_folder_path + current_model
-        print(current_model)
         os.system(shell_command)
 if __name__=='__main__':
 
@@ -124,8 +118,5 @@ if __name__=='__main__':
     #     current_keyword_folder = weibocityfilefolder + current_keyword_name
     #     extract_word_freq(current_keyword_folder)
 
-    # shell_训练
-    # exec_shell_train()
-
-    #shell_查看话题
-    exec_shell_view()
+    # shell 指令
+    exec_shell()
