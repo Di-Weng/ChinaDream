@@ -36,7 +36,7 @@ south_city = ['江苏','浙江','上海','湖北','湖南','四川','重庆','�
 def getAllFile(folderpath):
     temp_list = []
     folderlist = os.listdir(folderpath)
-    temp_list = [weibofilefolder + '/' + filename + '/' + filename for filename in folderlist if filename != '.DS_Store']
+    temp_list = [folderpath + '/' + filename + '/' + filename for filename in folderlist if filename != '.DS_Store']
     return temp_list
 
 
@@ -1168,6 +1168,48 @@ def keyword_emotion(file_paht_list):
             print(output_dic)
     return output_dic
 
+# output['at'] = [按照keyword顺序统计]
+# output['repost'] = [按照keyword顺序统计]
+# output['at_total'] = 所有微博数
+# output['repost_total'] = 所有微博数
+def keyword_mentionrepost(file_paht_list):
+    dismiss_count = 0
+    all_keywords_list = ['健康', '事业有成', '发展机会', '生活幸福', '有房', '出名', '家庭幸福', '好工作', '平等机会', '白手起家', '成为富人', '个体自由', '安享晚年',
+                     '收入足够', '个人努力', '祖国强大', '中国经济持续发展', '父辈更好']
+
+    output_dic = {}
+    output_dic['at'] = [0 for i in all_keywords_list]
+    output_dic['at_total'] = [0 for i in all_keywords_list]
+    output_dic['repost'] = [0 for i in all_keywords_list]
+    output_dic['repost_total'] = [0 for i in all_keywords_list]
+
+    print(output_dic)
+    for current_file in file_paht_list:
+        with open(current_file, 'r', encoding='utf-8') as f:
+            s_t = time()
+            for line in f:
+                line_section = line.split('\t')
+                location = getLocation(line_section)
+                keyword_list = getKeywordList(line_section)
+                current_text = getText(line_section)
+
+                current_text = filer.filer(current_text)
+                word_list = [word for word in jieba.cut(current_text)]
+                if (len(word_list) < 5):
+                    dismiss_count += 1
+                    continue
+                current_at = current_text.count('@')
+                current_repost = current_text.count('//')
+                for keyword in keyword_list:
+                    keyword = keyword.replace(',', '')
+                    output_dic['at'][all_keywords_list.index(keyword)] += current_at
+                    output_dic['at_total'][all_keywords_list.index(keyword)] += 1
+                    output_dic['repost'][all_keywords_list.index(keyword)] += current_repost
+                    output_dic['repost_total'][all_keywords_list.index(keyword)] += 1
+            e_t = time()
+        print(output_dic)
+        print('dismiss count: ' + str(dismiss_count))
+        print('current collection process time: ' + str(e_t - s_t))
 
 if __name__ == '__main__':
     # topic_keyword
