@@ -9,6 +9,7 @@
 -------------------------------
 """
 import warnings
+import math
 warnings.filterwarnings("ignore")
 from sklearn.metrics.cluster import calinski_harabaz_score
 import pandas as pd
@@ -246,7 +247,41 @@ def show_tsne(dreamvector_dataframe,num_components,n_cluster):
         ax.scatter(tsne.iloc[:, 0], tsne.iloc[:, 1], tsne.iloc[:, 2], c=tsne['class'], cmap='hsv')
         plt.savefig('result/dreamvector/tsne_3d_'+str(n_cluster)+'cluster'+'.jpg')
         plt.show()
+# output_dic['dream'] = {'province_shang':x,'emotion_shang':y}
+def province_emotion_shang(dreamvector_dic,province_number,emotion_number):
+    output_dic = {}
+    for current_dream,current_dreamvector in dreamvector_dic.items():
+        output_dic[current_dream] = {}
+        temp_total_province = 0
+        temp_total_emotion = 0
+        for i in range(province_number):
+            temp_total_province += current_dreamvector[i]
+        for j in range(emotion_number):
+            temp_total_emotion += current_dreamvector[j+province_number]
 
+        #calc shang
+        province_shang = 0.0
+        emotion_shang = 0.0
+
+        for i in range(province_number):
+            p_i = float(current_dreamvector[i])/temp_total_province
+            if (p_i != 0):
+                province_shang -= p_i * math.log(p_i, 2)
+            else:
+                continue
+
+        for j in range(emotion_number):
+            p_i = float(current_dreamvector[j+province_number]) / temp_total_emotion
+            if(p_i != 0):
+                emotion_shang -= p_i * math.log(p_i, 2)
+            else:
+                continue
+
+        output_dic[current_dream]['province_shang'] = province_shang
+        output_dic[current_dream]['emotion_shang'] = emotion_shang
+
+    print(output_dic)
+    return output_dic
 if __name__=='__main__':
     keyword_location_emotion_file = 'data/city_keyword_emotion/result.txt'
     keyword_list = ['健康','事业有成','发展机会','生活幸福','有房','出名','家庭幸福','好工作','平等机会','白手起家','成为富人','个体自由','安享晚年','收入足够','个人努力','祖国强大','中国经济持续发展','父辈更好']
@@ -260,17 +295,22 @@ if __name__=='__main__':
     keyword_province_emotion_dic = keyword_province_emotion(province_list,keyword_location_emotion)
     # print(keyword_province_emotion_dic)
     dreamvector_dic = generate_dreamvector(keyword_list,province_list,keyword_province,emotion_list,keyword_province_emotion_dic)
+    print(dreamvector_dic)
+    # dreamvector_percent_dic = dreamvector_dic_topercent(province_list,emotion_list,dreamvector_dic)
 
-    dreamvector_percent_dic = dreamvector_dic_topercent(province_list,emotion_list,dreamvector_dic)
+    #shang
+    shang_dic = province_emotion_shang(dreamvector_dic,len(province_list),len(emotion_list))
+    shang_dic = {'健康': {'province_shang': 4.614931341259213, 'emotion_shang': 1.7425643297013043},'事业有成': {'province_shang': 4.6637099637881985, 'emotion_shang': 1.330961168845477},'发展机会': {'province_shang': 4.646693383284832, 'emotion_shang': 1.6815369339421364},'生活幸福': {'province_shang': 4.676081956069652, 'emotion_shang': 1.326266607438356},'有房': {'province_shang': 4.450996265928352, 'emotion_shang': 1.8512545823922906},'出名': {'province_shang': 4.60629078639634, 'emotion_shang': 1.7926907030973753},'家庭幸福': {'province_shang': 4.645193087395395, 'emotion_shang': 1.4111918296202708},'好工作': {'province_shang': 4.5806270617437725, 'emotion_shang': 1.699848118852902},'平等机会': {'province_shang': 4.535844884956961, 'emotion_shang': 1.8934531097785894},'白手起家': {'province_shang': 4.576773617415558, 'emotion_shang': 1.4671189161848104},'成为富人': {'province_shang': 4.610419305107782, 'emotion_shang': 1.806871317347328},'个体自由': {'province_shang': 3.8793067156561394, 'emotion_shang': 1.3132859350989219},'安享晚年': {'province_shang': 4.532088162152894, 'emotion_shang': 1.7959849012260913},'收入足够': {'province_shang': 4.44449133972484, 'emotion_shang': 1.8576476312107724},'个人努力': {'province_shang': 4.724085178174252, 'emotion_shang': 1.1191634015490641},'祖国强大': {'province_shang': 4.611218815596922, 'emotion_shang': 1.549148587597116},'中国经济持续发展': {'province_shang': 3.82186193262807, 'emotion_shang': 1.5304930567574826},'父辈更好': {'province_shang': 4.541929022026666, 'emotion_shang': 1.9182958340544896}}
 
-    columns_name = []
-    for current_province in province_list:
-        columns_name.append(current_province)
-    for current_emotion in emotion_list:
-        columns_name.append(current_emotion)
+    # #columns name
+    # columns_name = []
+    # for current_province in province_list:
+    #     columns_name.append(current_province)
+    # for current_emotion in emotion_list:
+    #     columns_name.append(current_emotion)
 
     #dreamvector [省1，省2，...,省31,情感0,情感1,情感3,情感4,情感5]
-    dreamvector_dataframe = pd.DataFrame.from_dict(dreamvector_percent_dic, orient='index',columns = columns_name)
+    # dreamvector_dataframe = pd.DataFrame.from_dict(dreamvector_percent_dic, orient='index',columns = columns_name)
     # print(dreamvector_dataframe)
 
 
@@ -281,21 +321,23 @@ if __name__=='__main__':
 
     ## Parallel Coordinate
     # draw_parallel_coordinate(dreamvector_dataframe_standardized)
-    ch_list = []
-    x_list = []
-    temp_n = 1
-    xticks_list = []
-    for i in range(2,16):
-        # current_ch = imple_kmeans(dreamvector_dataframe,i+1)
-        current_ch = imple_SpectralClustering(dreamvector_dataframe,i+1)
-        x_list.append(i+1)
-        ch_list.append(current_ch)
-        xticks_list.append(temp_n)
-        temp_n+=1
 
-    plt.plot(xticks_list, ch_list)
-    plt.xticks(xticks_list, x_list)
-    plt.title('calinski harabaz score')
-    plt.xlabel('类目数')
-    plt.show()
-    plt.savefig('result/dreamvector/ch_score.jpg')
+    # #ch指标
+    # ch_list = []
+    # x_list = []
+    # temp_n = 1
+    # xticks_list = []
+    # for i in range(2,16):
+    #     # current_ch = imple_kmeans(dreamvector_dataframe,i+1)
+    #     current_ch = imple_SpectralClustering(dreamvector_dataframe,i+1)
+    #     x_list.append(i+1)
+    #     ch_list.append(current_ch)
+    #     xticks_list.append(temp_n)
+    #     temp_n+=1
+    #
+    # plt.plot(xticks_list, ch_list)
+    # plt.xticks(xticks_list, x_list)
+    # plt.title('calinski harabaz score')
+    # plt.xlabel('类目数')
+    # plt.show()
+    # plt.savefig('result/dreamvector/ch_score.jpg')
