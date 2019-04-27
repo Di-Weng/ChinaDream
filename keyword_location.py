@@ -116,6 +116,7 @@ def province_percent(calc_dic):
         if(len(province_list) == 0):
             continue
         province = province_list[0]
+
         output_dic[province] = []
         sum = calc_sum(current_list)
         temp_list = []
@@ -181,25 +182,29 @@ def stand_output(keyword_map):
 
 def line_pie_chart_data(keyword_location):
     echarts_data = []
-    axis_list = ['dream']
-    for current_dream in keywords_list:
-        axis_list.append(current_dream)
+    axis_list = ['province']
+
     echarts_data.append(axis_list)
     percent_output = province_percent(keyword_location)
     percent_output_dataframe = DataFrame.from_dict(percent_output, orient='index', columns=keywords_list)
     zs_percent_output_dataframe = percent_output_dataframe.apply(lambda x: (x - np.min(x)) / (np.max(x) - np.min(x)))
-    print(zs_percent_output_dataframe)
-    for current_index in range(len(zs_percent_output_dataframe)):
-        current_array = zs_percent_output_dataframe.iloc[current_index].values.tolist()
-        current_province = zs_percent_output_dataframe.index[current_index]
 
+    #省份数据
+    temp_index = 0
+    for current_index in range(len(zs_percent_output_dataframe)):
+        current_province = zs_percent_output_dataframe.index[current_index]
+        axis_list.append(current_province)
+    echarts_data.append(axis_list)
+
+    #梦数据
+    for current_dream in keywords_list:
         output_list = []
-        output_list.append(current_province)
-        #格式化输出
+        current_array = zs_percent_output_dataframe[current_dream].values.tolist()
+        output_list.append(current_dream)
         for temp in current_array:
             output_list.append(round(temp,3))
-
         echarts_data.append(output_list)
+
     print(echarts_data)
     print(len(echarts_data))
 
@@ -211,7 +216,6 @@ if __name__ == '__main__':
     line_pie_chart_data(keyword_location)
 
     # get_echartsdata(percent_output)
-
 
     # #全省地图
     # keyword_map = province_map_echarts(keyword_location)
