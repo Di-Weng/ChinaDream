@@ -26,6 +26,7 @@ import gc
 from random import randint
 import linecache
 from math import sqrt
+from filer import remove_at
 import fcntl
 
 # the uppest path of weibo data document
@@ -1194,12 +1195,18 @@ def keyword_mentionrepost(file_paht_list):
                 current_text = getText(line_section)
 
                 current_text = filer.filer(current_text)
+
+                #先统计@率和转发率再移除@的符号
+                current_at = current_text.count('@')
+                current_repost = current_text.count('//')
+
+                current_text = remove_at(current_text)
+
                 word_list = [word for word in jieba.cut(current_text)]
                 if (len(word_list) < 5):
                     dismiss_count += 1
                     continue
-                current_at = current_text.count('@')
-                current_repost = current_text.count('//')
+
                 for keyword in keyword_list:
                     keyword = keyword.replace(',', '')
                     output_dic['at'][all_keywords_list.index(keyword)] += current_at
