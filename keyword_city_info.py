@@ -171,7 +171,7 @@ def province_dic(input_dic):
     output_dic = {}
     output_dic['2016']={}
     output_dic['2015']={}
-    output_dic['2014']={}
+    # output_dic['2014']={}
 
     for current_yearmonth,current_yearmonth_dic in input_dic.items():
         #提取从第0-3共四位数字
@@ -196,7 +196,7 @@ def extract_province_data_from_csv(file_path_list):
     province_data_dic={}
     province_data_dic['2016']={}
     province_data_dic['2015']={}
-    province_data_dic['2014']={}
+    # province_data_dic['2014']={}
     for current_file_path in file_path_list:
         current_data_name = current_file_path.split('/')[-1].split('.')[0]
 
@@ -206,7 +206,7 @@ def extract_province_data_from_csv(file_path_list):
             csv_reader = csv.reader(csv_file)
             temp_list_2016 = [0 for i in range(len(city_list))]
             temp_list_2015 = [0 for i in range(len(city_list))]
-            temp_list_2014 = [0 for i in range(len(city_list))]
+            # temp_list_2014 = [0 for i in range(len(city_list))]
             for row in csv_reader:
                 if(row[0] == '地区'):
                     pass
@@ -232,14 +232,14 @@ def extract_province_data_from_csv(file_path_list):
                             temp_list_2015[temp_index] = 0
                         else:
                             temp_list_2015[temp_index] = float(row[2])
-                        if (len(row[3]) == 0):
-                            temp_list_2014[temp_index] = 0
-                        else:
-                            temp_list_2014[temp_index] = float(row[3])
+                        # if (len(row[3]) == 0):
+                        #     temp_list_2014[temp_index] = 0
+                        # else:
+                        #     temp_list_2014[temp_index] = float(row[3])
                     # print(row)
             province_data_dic['2016'][current_data_name] = temp_list_2016
             province_data_dic['2015'][current_data_name] = temp_list_2015
-            province_data_dic['2014'][current_data_name] = temp_list_2014
+            # province_data_dic['2014'][current_data_name] = temp_list_2014
     # print(province_data_dic)
     return province_data_dic
 
@@ -248,8 +248,8 @@ def year_dataframe(year_list,province_data,province_keyword_data,itype):
 
     output_dic = {}
     #temp_result_dic['年'] = {'keyword':[]}
-    temp_year_province_data = province_data['2014']
-    temp_year_keyword_data = province_keyword_data['2014']
+    temp_year_province_data = province_data['2015']
+    temp_year_keyword_data = province_keyword_data['2015']
     keyword_list = [keyword_t for keyword_t in temp_year_keyword_data.keys()]
     indicator_list = [indicator_t for indicator_t in temp_year_province_data.keys()]
 
@@ -326,9 +326,9 @@ def year_dataframe(year_list,province_data,province_keyword_data,itype):
 
 # 将year_dataframe的数据重组成year_dataframe['indicator'] = [dataframe]
 def indicator_dataframe_yearkeyword(year_dataframe_dic,year_list,province_data,province_keyword_data,itype):
-    temp_year_province_data = province_data['2014']
+    temp_year_province_data = province_data['2015']
     indicator_list = [indicator_t for indicator_t in temp_year_province_data.keys()]
-    temp_year_keyword_data = province_keyword_data['2014']
+    temp_year_keyword_data = province_keyword_data['2015']
     keyword_list = [keyword_t for keyword_t in temp_year_keyword_data.keys()]
 
     output_dic = {}
@@ -352,9 +352,9 @@ def dic_to_dataframe(input_dic,row_name_list,column_name_list):
     return current_dataframe
 
 def draw_indicator_dataframe_yearkeyword(indicator_dataframe_dic,year_list, province_data, province_keyword_data, itype):
-    temp_year_province_data = province_data['2014']
+    temp_year_province_data = province_data['2015']
     indicator_list = [indicator_t for indicator_t in temp_year_province_data.keys()]
-    temp_year_keyword_data = province_keyword_data['2014']
+    temp_year_keyword_data = province_keyword_data['2015']
     keyword_list = [keyword_t for keyword_t in temp_year_keyword_data.keys()]
 
     for current_indicator in indicator_list:
@@ -365,13 +365,13 @@ def draw_indicator_dataframe_yearkeyword(indicator_dataframe_dic,year_list, prov
         elif(itype == 'spearman_p'):
             p = sns.heatmap(current_dataframe, annot=True, fmt ='.4f', ax=ax, mask=current_dataframe > 0.05,linewidths=.05, vmax=0.05,vmin=0, center=False)
         current_title = current_indicator + ' ' + itype
-        ax.set_title(current_title)
+        # ax.set_title(current_title)
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
         ax.set_yticklabels(ax.get_yticklabels(), rotation = 0)
         ax.set_xlabel('中国梦')
         ax.set_ylabel('年份')
         plt.show()
-        f.savefig('result/中国梦与经济指标/city/perspective_' + current_title + '.jpg', bbox_inches='tight')
+        f.savefig('result/中国梦与经济指标/city/perspective_' + current_title + '.png', bbox_inches='tight')
 
 
 def draw_distribution(dataframe_dic,itype):
@@ -394,7 +394,7 @@ def draw_distribution(dataframe_dic,itype):
         sns.distplot(current_year_list,bins=[x for x in x_lable],kde=True, norm_hist=False,rug=False)
         plt.ylabel('密度')
         plt.xlabel('相关性')
-        plt.title(current_year + '相关性分布图')
+        # plt.title(current_year + '相关性分布图')
         plt.savefig('result/中国梦与经济指标/city/'+ current_year+ '_相关性分布图' + '.png', bbox_inches='tight')
         plt.show()
 
@@ -412,7 +412,7 @@ def draw_distribution(dataframe_dic,itype):
     plt.legend()
     plt.ylabel('频数')
     plt.xlabel('相关性')
-    plt.title('相关性分布图')
+    # plt.title('相关性分布图')
     plt.savefig('result/中国梦与经济指标/city/' + '相关性分布图' + '.png', bbox_inches='tight')
 
     plt.show()
@@ -427,70 +427,70 @@ if __name__ == '__main__':
     file_list = getAllFileList(data_path)
     province_data = extract_province_data_from_csv(file_list)
 
-    year_list = ['2014','2015','2016']
+    year_list = ['2015','2016']
     dataframe_dic = year_dataframe(year_list,province_data,province_keyword_data,itype)
 
     print(dataframe_dic)
     draw_distribution(dataframe_dic,itype)
 
-    # indicator_dataframe_dic = indicator_dataframe_yearkeyword(dataframe_dic, year_list, province_data, province_keyword_data, itype)
-    # draw_indicator_dataframe_yearkeyword(indicator_dataframe_dic,year_list,province_data,province_keyword_data,itype)
+    indicator_dataframe_dic = indicator_dataframe_yearkeyword(dataframe_dic, year_list, province_data, province_keyword_data, itype)
+    draw_indicator_dataframe_yearkeyword(indicator_dataframe_dic,year_list,province_data,province_keyword_data,itype)
 
 
-    # for current_year,current_dataframe in dataframe_dic.items():
-    #     print(current_dataframe)
-    #
-    #     if(itype == 'spearman'):
-    #         mask_list = [0,0.2,0.4,0.6,0.8]
-    #         for i in range(5):
-    #             current_mask = mask_list[i]
-    #             f, ax = plt.subplots(figsize=(10, 8), nrows=1)
-    #             p = sns.heatmap(current_dataframe, ax=ax, linewidths=.05, mask=current_dataframe < current_mask, vmax=1, vmin=-0.5, center=False)
-    #             current_title = ''
-    #             if(current_mask == 0.0):
-    #                 current_title = current_year + ' ' + itype
-    #                 ax.set_title(current_title)
-    #                 ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
-    #                 ax.set_xlabel('中国梦')
-    #                 ax.set_ylabel('经济指标')
-    #             else:
-    #                 current_title = current_year + ' ' + itype + ' mask<' + str(current_mask)
-    #                 ax.set_title(current_title)
-    #                 ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
-    #                 ax.set_xlabel('中国梦')
-    #                 ax.set_ylabel('经济指标')
-    #             plt.show()
-    #             current_title.replace('<',':')
-    #             f.savefig('result/中国梦与经济指标/city/' + current_title + '.jpg', bbox_inches='tight')
-    #         continue
-    #
-    #
-    #     f, (ax1,ax2) = plt.subplots(figsize = (10, 8),nrows=2)
-    #     if (itype == 'pearson' or itype == 'spearman' or itype == 'indicator'):
-    #         p_1 = sns.heatmap(current_dataframe, ax = ax1, linewidths=.05,vmax=1, vmin=-0.5,center=False)
-    #     elif (itype == 'pearson_p' or itype == 'spearman_p' or itype == 'indicator_p'):
-    #         p_1 = sns.heatmap(current_dataframe, ax = ax1, linewidths=.05,vmax=1, vmin=0,center=False)
-    #
-    #     ax1.set_title(current_year + ' ' + itype)
-    #     ax1.set_xlabel('')
-    #     ax1.set_xticklabels([])  # 设置x轴图例为空值
-    #     ax1.set_ylabel('经济指标')
-    #
-    #
-    #     if(itype == 'pearson' or itype== 'spearman' or itype == 'indicator'):
-    #         p_2 = sns.heatmap(current_dataframe, ax=ax2, linewidths=.05, mask=current_dataframe < 0.8, vmax=1,vmin=-0.5)
-    #         ax2.set_title('mask：<0.8')
-    #     elif(itype == 'pearson_p' or itype == 'spearman_p' or itype == 'indicator_p'):
-    #         p_2 = sns.heatmap(current_dataframe, ax=ax2, linewidths=.05, mask=current_dataframe > 0.05, vmax=1,
-    #                           vmin=0)
-    #         ax2.set_title('mask：>0.05')
-    #     ax2.set_xticklabels(ax2.get_xticklabels(), rotation=90)
-    #     if(itype == 'indicator' or itype == 'indicator_p'):
-    #         ax2.set_xlabel('经济指标')
-    #     else:
-    #         ax2.set_xlabel('中国梦')
-    #     ax2.set_ylabel('经济指标')
-    #     plt.show()
-    #     f.savefig('result/中国梦与经济指标/city/' + itype + '_' + current_year + '.jpg', bbox_inches='tight')
+    for current_year,current_dataframe in dataframe_dic.items():
+        print(current_dataframe)
+
+        if(itype == 'spearman'):
+            mask_list = [0,0.2,0.4,0.6,0.8]
+            for i in range(5):
+                current_mask = mask_list[i]
+                f, ax = plt.subplots(figsize=(10, 8), nrows=1)
+                p = sns.heatmap(current_dataframe, ax=ax, linewidths=.05, mask=current_dataframe < current_mask, vmax=1, vmin=-0.5, center=False)
+                current_title = ''
+                if(current_mask == 0.0):
+                    current_title = current_year + ' ' + itype
+                    # ax.set_title(current_title)
+                    ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+                    ax.set_xlabel('中国梦')
+                    ax.set_ylabel('经济指标')
+                else:
+                    current_title = current_year + ' ' + itype + ' mask<' + str(current_mask)
+                    # ax.set_title(current_title)
+                    ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+                    ax.set_xlabel('中国梦')
+                    ax.set_ylabel('经济指标')
+                plt.show()
+                current_title.replace('<',':')
+                f.savefig('result/中国梦与经济指标/city/' + current_title + '.png', bbox_inches='tight')
+            continue
+
+
+        f, (ax1,ax2) = plt.subplots(figsize = (10, 8),nrows=2)
+        if (itype == 'pearson' or itype == 'spearman' or itype == 'indicator'):
+            p_1 = sns.heatmap(current_dataframe, ax = ax1, linewidths=.05,vmax=1, vmin=-0.5,center=False)
+        elif (itype == 'pearson_p' or itype == 'spearman_p' or itype == 'indicator_p'):
+            p_1 = sns.heatmap(current_dataframe, ax = ax1, linewidths=.05,vmax=1, vmin=0,center=False)
+
+        # ax1.set_title(current_year + ' ' + itype)
+        ax1.set_xlabel('')
+        ax1.set_xticklabels([])  # 设置x轴图例为空值
+        ax1.set_ylabel('经济指标')
+
+
+        if(itype == 'pearson' or itype== 'spearman' or itype == 'indicator'):
+            p_2 = sns.heatmap(current_dataframe, ax=ax2, linewidths=.05, mask=current_dataframe < 0.8, vmax=1,vmin=-0.5)
+            ax2.set_title('mask：<0.8')
+        elif(itype == 'pearson_p' or itype == 'spearman_p' or itype == 'indicator_p'):
+            p_2 = sns.heatmap(current_dataframe, ax=ax2, linewidths=.05, mask=current_dataframe > 0.05, vmax=1,
+                              vmin=0)
+            ax2.set_title('mask：>0.05')
+        ax2.set_xticklabels(ax2.get_xticklabels(), rotation=90)
+        if(itype == 'indicator' or itype == 'indicator_p'):
+            ax2.set_xlabel('经济指标')
+        else:
+            ax2.set_xlabel('中国梦')
+        ax2.set_ylabel('经济指标')
+        plt.show()
+        f.savefig('result/中国梦与经济指标/city/' + itype + '_' + current_year + '.png', bbox_inches='tight')
 
 

@@ -25,6 +25,7 @@ from sklearn.mixture import GaussianMixture
 from sklearn.decomposition import PCA
 from sklearn.cluster import SpectralClustering
 from mpl_toolkits.mplot3d import Axes3D  #3D图表需要使用“mpl_toolkits”模块
+import random
 plt.rcParams['font.family'] = ['Arial Unicode MS'] #用来正常显示中文标签
 plt.rcParams['axes.unicode_minus'] = False #用来正常显示负号
 dreamvector_list = {}
@@ -115,9 +116,9 @@ def dreamvector_dic_topercent(province_list,emotion_list,dreamvector_dic):
 def draw_parallel_coordinate(dreamvector_dataframe,n_cluster):
     plt.rcParams['figure.figsize'] = (16, 8)  # 设置figure_size尺寸
     plt.figure()
-    plt.title(str(n_cluster) + '_classes')
+    # plt.title(str(n_cluster) + '_classes')
     parallel_coordinates(dreamvector_dataframe,'聚类类别',colormap='hsv')
-    plt.savefig('result/dreamvector/parallel_coordinates' + str(n_cluster) + '_cluster' + '.jpg')
+    plt.savefig('result/dreamvector/parallel_coordinates' + str(n_cluster) + '_cluster' + '.png')
     plt.show()
 
 def imple_kmeans(dreamvector_dataframe,k):
@@ -155,11 +156,12 @@ def imple_GMM(dreamvector_dataframe,k):
     dreamvector_dataframe['聚类类别'] = labels
     ch_index = calinski_harabaz_score(dreamvector_dataframe.iloc[:,0:-1], labels)
     print(str(k)+' class calinski_harabaz_score:' +str(ch_index))
-    # show_pca(dreamvector_dataframe,2,k)
-    # show_pca(dreamvector_dataframe,3,k)
-    # show_tsne(dreamvector_dataframe,2,k)
+    show_pca(dreamvector_dataframe,2,k)
+    show_pca(dreamvector_dataframe,3,k)
+    show_tsne(dreamvector_dataframe,2,k)
     show_tsne(dreamvector_dataframe,3,k)
-    # draw_parallel_coordinate(dreamvector_dataframe,k)
+    draw_parallel_coordinate(dreamvector_dataframe,k)
+    return ch_index
 
 def imple_SpectralClustering(dreamvector_dataframe,k):
     model = SpectralClustering(n_clusters=k)  # 分为k类, 使用默认的高斯核
@@ -181,6 +183,7 @@ def imple_SpectralClustering(dreamvector_dataframe,k):
 def show_pca(dreamvector_dataframe,num_components,n_cluster):
     pca = PCA(n_components=num_components)
     newData = pca.fit_transform(dreamvector_dataframe.iloc[:,0:-1])
+    print(pca.explained_variance_ratio_)
     pca_data = pd.DataFrame(newData,index=dreamvector_dataframe._stat_axis.values.tolist())
 
     pca_data['class'] = dreamvector_dataframe['聚类类别']
@@ -191,13 +194,28 @@ def show_pca(dreamvector_dataframe,num_components,n_cluster):
         plt.rcParams['figure.figsize'] = (8, 6)  # 设置figure_size尺寸
         # hue指色彩，是散点不同颜色的来源
         # print(pca_data)
-        plt.title(str(n_cluster) + '_classes')
+        # plt.title(str(n_cluster) + '_classes')
         dream_list = dreamvector_dataframe._stat_axis.values.tolist()
         plt.scatter(pca_data.iloc[:, 0], pca_data.iloc[:, 1], c=pca_data['class'], cmap='hsv', linewidth=0.65)
+
         for i in range(len(dreamvector_dataframe['聚类类别'])):
-            plt.annotate(dream_list[i], xy=(pca_data.iloc[i, 0], pca_data.iloc[i, 1]), xytext=(+3,+2),textcoords='offset points')  # 这里xy是需要标记
+            random_x = -1 + 2*np.random.random()
+            random_y = -1 + 2*np.random.random()
+            if(dream_list[i] == '祖国强大'):
+                plt.annotate(dream_list[i], xy=(pca_data.iloc[i, 0], pca_data.iloc[i, 1]),
+                             xytext=(-(45 + random_x), +(5 + random_y)), textcoords='offset points')  # 这里xy是需要标记
+            elif(dream_list[i] == '生活幸福' or dream_list[i] == '白手起家' or dream_list[i] == '发展机会' ):
+                plt.annotate(dream_list[i], xy=(pca_data.iloc[i, 0], pca_data.iloc[i, 1]), xytext=(-(45+random_x),-(5+random_y)),textcoords='offset points')  # 这里xy是需要标记
+            elif(dream_list[i] == '出名'):
+                plt.annotate(dream_list[i], xy=(pca_data.iloc[i, 0], pca_data.iloc[i, 1]),
+                             xytext=(-(25 + random_x), -(5 + random_y)), textcoords='offset points')  # 这里xy是需要标记
+            elif (dream_list[i] == '好工作'):
+                plt.annotate(dream_list[i], xy=(pca_data.iloc[i, 0], pca_data.iloc[i, 1]),
+                             xytext=(+(3 + random_x), +(5 + random_y)), textcoords='offset points')  # 这里xy是需要标记
+            else:
+                plt.annotate(dream_list[i], xy=(pca_data.iloc[i, 0], pca_data.iloc[i, 1]), xytext=(+(3+random_x),+(2+random_y)),textcoords='offset points')  # 这里xy是需要标记
         plt.grid(True)
-        plt.savefig('result/dreamvector/pca_2d_'+str(n_cluster)+'cluster'+'.jpg')
+        plt.savefig('result/dreamvector/pca_2d_'+str(n_cluster)+'cluster'+'.png')
         plt.show()
     elif(num_components==3):
         # 3d
@@ -205,10 +223,10 @@ def show_pca(dreamvector_dataframe,num_components,n_cluster):
 
         fig = plt.figure('3D scatter plot')
         ax = fig.add_subplot(111, projection='3d')  # 3d图需要加projection='3d'
-        ax.set_title(str(n_cluster) + '_classes')
+        # ax.set_title(str(n_cluster) + '_classes')
         # print(pca_data)
         ax.scatter(pca_data.iloc[:, 0], pca_data.iloc[:, 1], pca_data.iloc[:, 2], c=pca_data['class'], cmap='hsv', label = '')
-        plt.savefig('result/dreamvector/pca_3d_'+str(n_cluster)+'cluster'+'.jpg')
+        plt.savefig('result/dreamvector/pca_3d_'+str(n_cluster)+'cluster'+'.png')
         plt.show()
 
 def show_tsne(dreamvector_dataframe,num_components,n_cluster):
@@ -227,13 +245,14 @@ def show_tsne(dreamvector_dataframe,num_components,n_cluster):
         plt.rcParams['figure.figsize'] = (8, 6)  # 设置figure_size尺寸
         # hue指色彩，是散点不同颜色的来源
         # print(pca_data)
-        plt.title(str(n_cluster) + '_classes')
+        # plt.title(str(n_cluster) + '_classes')
         dream_list = dreamvector_dataframe._stat_axis.values.tolist()
         plt.scatter(tsne.iloc[:, 0], tsne.iloc[:, 1], c=tsne['class'], cmap='hsv', linewidth=0.65)
         for i in range(len(dreamvector_dataframe['聚类类别'])):
-            plt.annotate(dream_list[i], xy=(tsne.iloc[i, 0], tsne.iloc[i, 1]), xytext=(+3, +2),textcoords='offset points')  # 这里xy是需要标记
+            random_int = random.randint(1,2)
+            plt.annotate(dream_list[i], xy=(tsne.iloc[i, 0], tsne.iloc[i, 1]), xytext=(+(3+random_int), +(2+random_int)),textcoords='offset points')  # 这里xy是需要标记
         plt.grid(True)
-        plt.savefig('result/dreamvector/tsne_2d_'+str(n_cluster)+'cluster'+'.jpg')
+        plt.savefig('result/dreamvector/tsne_2d_'+str(n_cluster)+'cluster'+'.png')
         plt.show()
 
     #3d
@@ -242,10 +261,10 @@ def show_tsne(dreamvector_dataframe,num_components,n_cluster):
 
         fig = plt.figure('3D scatter plot')
         ax = fig.add_subplot(111, projection='3d')  # 3d图需要加projection='3d'
-        ax.set_title(str(n_cluster) + '_classes')
+        # ax.set_title(str(n_cluster) + '_classes')
         # print(pca_data)
         ax.scatter(tsne.iloc[:, 0], tsne.iloc[:, 1], tsne.iloc[:, 2], c=tsne['class'], cmap='hsv')
-        plt.savefig('result/dreamvector/tsne_3d_'+str(n_cluster)+'cluster'+'.jpg')
+        plt.savefig('result/dreamvector/tsne_3d_'+str(n_cluster)+'cluster'+'.png')
         plt.show()
 # output_dic['dream'] = {'province_shang':x,'emotion_shang':y}
 def province_emotion_shang(dreamvector_dic,province_number,emotion_number):
@@ -296,22 +315,22 @@ if __name__=='__main__':
     # print(keyword_province_emotion_dic)
     dreamvector_dic = generate_dreamvector(keyword_list,province_list,keyword_province,emotion_list,keyword_province_emotion_dic)
     print(dreamvector_dic)
-    # dreamvector_percent_dic = dreamvector_dic_topercent(province_list,emotion_list,dreamvector_dic)
+    dreamvector_percent_dic = dreamvector_dic_topercent(province_list,emotion_list,dreamvector_dic)
 
     #shang
-    shang_dic = province_emotion_shang(dreamvector_dic,len(province_list),len(emotion_list))
-    shang_dic = {'健康': {'province_shang': 4.614931341259213, 'emotion_shang': 1.7425643297013043},'事业有成': {'province_shang': 4.6637099637881985, 'emotion_shang': 1.330961168845477},'发展机会': {'province_shang': 4.646693383284832, 'emotion_shang': 1.6815369339421364},'生活幸福': {'province_shang': 4.676081956069652, 'emotion_shang': 1.326266607438356},'有房': {'province_shang': 4.450996265928352, 'emotion_shang': 1.8512545823922906},'出名': {'province_shang': 4.60629078639634, 'emotion_shang': 1.7926907030973753},'家庭幸福': {'province_shang': 4.645193087395395, 'emotion_shang': 1.4111918296202708},'好工作': {'province_shang': 4.5806270617437725, 'emotion_shang': 1.699848118852902},'平等机会': {'province_shang': 4.535844884956961, 'emotion_shang': 1.8934531097785894},'白手起家': {'province_shang': 4.576773617415558, 'emotion_shang': 1.4671189161848104},'成为富人': {'province_shang': 4.610419305107782, 'emotion_shang': 1.806871317347328},'个体自由': {'province_shang': 3.8793067156561394, 'emotion_shang': 1.3132859350989219},'安享晚年': {'province_shang': 4.532088162152894, 'emotion_shang': 1.7959849012260913},'收入足够': {'province_shang': 4.44449133972484, 'emotion_shang': 1.8576476312107724},'个人努力': {'province_shang': 4.724085178174252, 'emotion_shang': 1.1191634015490641},'祖国强大': {'province_shang': 4.611218815596922, 'emotion_shang': 1.549148587597116},'中国经济持续发展': {'province_shang': 3.82186193262807, 'emotion_shang': 1.5304930567574826},'父辈更好': {'province_shang': 4.541929022026666, 'emotion_shang': 1.9182958340544896}}
+    # shang_dic = province_emotion_shang(dreamvector_dic,len(province_list),len(emotion_list))
+    # shang_dic = {'健康': {'province_shang': 4.614931341259213, 'emotion_shang': 1.7425643297013043},'事业有成': {'province_shang': 4.6637099637881985, 'emotion_shang': 1.330961168845477},'发展机会': {'province_shang': 4.646693383284832, 'emotion_shang': 1.6815369339421364},'生活幸福': {'province_shang': 4.676081956069652, 'emotion_shang': 1.326266607438356},'有房': {'province_shang': 4.450996265928352, 'emotion_shang': 1.8512545823922906},'出名': {'province_shang': 4.60629078639634, 'emotion_shang': 1.7926907030973753},'家庭幸福': {'province_shang': 4.645193087395395, 'emotion_shang': 1.4111918296202708},'好工作': {'province_shang': 4.5806270617437725, 'emotion_shang': 1.699848118852902},'平等机会': {'province_shang': 4.535844884956961, 'emotion_shang': 1.8934531097785894},'白手起家': {'province_shang': 4.576773617415558, 'emotion_shang': 1.4671189161848104},'成为富人': {'province_shang': 4.610419305107782, 'emotion_shang': 1.806871317347328},'个体自由': {'province_shang': 3.8793067156561394, 'emotion_shang': 1.3132859350989219},'安享晚年': {'province_shang': 4.532088162152894, 'emotion_shang': 1.7959849012260913},'收入足够': {'province_shang': 4.44449133972484, 'emotion_shang': 1.8576476312107724},'个人努力': {'province_shang': 4.724085178174252, 'emotion_shang': 1.1191634015490641},'祖国强大': {'province_shang': 4.611218815596922, 'emotion_shang': 1.549148587597116},'中国经济持续发展': {'province_shang': 3.82186193262807, 'emotion_shang': 1.5304930567574826},'父辈更好': {'province_shang': 4.541929022026666, 'emotion_shang': 1.9182958340544896}}
 
-    # #columns name
-    # columns_name = []
-    # for current_province in province_list:
-    #     columns_name.append(current_province)
-    # for current_emotion in emotion_list:
-    #     columns_name.append(current_emotion)
+    #columns name
+    columns_name = []
+    for current_province in province_list:
+        columns_name.append(current_province)
+    for current_emotion in emotion_list:
+        columns_name.append(current_emotion)
 
-    #dreamvector [省1，省2，...,省31,情感0,情感1,情感3,情感4,情感5]
-    # dreamvector_dataframe = pd.DataFrame.from_dict(dreamvector_percent_dic, orient='index',columns = columns_name)
-    # print(dreamvector_dataframe)
+    # dreamvector [省1，省2，...,省31,情感0,情感1,情感3,情感4,情感5]
+    dreamvector_dataframe = pd.DataFrame.from_dict(dreamvector_percent_dic, orient='index',columns = columns_name)
+    print(dreamvector_dataframe)
 
 
     # 不需要列标准化
@@ -322,22 +341,23 @@ if __name__=='__main__':
     ## Parallel Coordinate
     # draw_parallel_coordinate(dreamvector_dataframe_standardized)
 
-    # #ch指标
-    # ch_list = []
-    # x_list = []
-    # temp_n = 1
-    # xticks_list = []
-    # for i in range(2,16):
-    #     # current_ch = imple_kmeans(dreamvector_dataframe,i+1)
-    #     current_ch = imple_SpectralClustering(dreamvector_dataframe,i+1)
-    #     x_list.append(i+1)
-    #     ch_list.append(current_ch)
-    #     xticks_list.append(temp_n)
-    #     temp_n+=1
-    #
-    # plt.plot(xticks_list, ch_list)
-    # plt.xticks(xticks_list, x_list)
-    # plt.title('calinski harabaz score')
-    # plt.xlabel('类目数')
-    # plt.show()
-    # plt.savefig('result/dreamvector/ch_score.jpg')
+    #ch指标
+    ch_list = []
+    x_list = []
+    temp_n = 1
+    xticks_list = []
+    for i in range(2,16):
+        # current_ch = imple_kmeans(dreamvector_dataframe,i+1)
+        current_ch = imple_GMM(dreamvector_dataframe,i+1)
+        # current_ch = imple_SpectralClustering(dreamvector_dataframe,i+1)
+        x_list.append(i+1)
+        ch_list.append(current_ch)
+        xticks_list.append(temp_n)
+        temp_n+=1
+
+    plt.plot(xticks_list, ch_list)
+    plt.xticks(xticks_list, x_list)
+    plt.title('calinski harabaz score')
+    plt.xlabel('类目数')
+    plt.show()
+    plt.savefig('result/dreamvector/ch_score.png')
